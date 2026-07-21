@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "gamemaker": {
+      "command": "node",
+      "args": ["C:\\Users\\Micr\\GameMakerMCP\\dist\\src\\index.js"],
+      "env": {
+        "GAMEMAKER_PROJECT": "C:\\Users\\Micr\\ShaderCubeGame\\ShaderCubeGame.yyp",
+        "GAMEMAKER_MCP_MODE": "workspace-write",
+        "GAMEMAKER_MCP_ALLOW_BUILD": "1"
+      }
+    }
+  }
+}
