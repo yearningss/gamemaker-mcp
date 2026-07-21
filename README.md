@@ -1,5 +1,10 @@
 # GameMaker MCP Server
 
+[![npm version](https://img.shields.io/npm/v/gamemaker-mcp.svg)](https://www.npmjs.com/package/gamemaker-mcp)
+[![npm downloads](https://img.shields.io/npm/dm/gamemaker-mcp.svg)](https://www.npmjs.com/package/gamemaker-mcp)
+[![license](https://img.shields.io/npm/l/gamemaker-mcp.svg)](https://github.com/yearningss/gamemaker-mcp/blob/main/LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/yearningss/gamemaker-mcp.svg)](https://github.com/yearningss/gamemaker-mcp)
+
 A project-aware local MCP server for GameMaker Studio. It gives an MCP client structured access to a `.yyp` project: inspection, static analysis, guarded editing, object/room/shader operations, snapshots, validation, and official Igor builds.
 
 The server uses the stable `@modelcontextprotocol/sdk` v1 line over `stdio`. It does not bind a network port. File operations stay inside one configured project, and existing text files use SHA-256 optimistic concurrency plus backups.
