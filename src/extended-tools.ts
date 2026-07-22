@@ -479,4 +479,129 @@ export function registerExtendedTools(server: McpServer, project: GameMakerProje
     },
     async () => run(() => project.autofixProject()),
   );
+
+  server.registerTool(
+    "gm_font_create",
+    {
+      title: "Create GameMaker Font asset",
+      description: "Create a new GameMaker Font asset (.yy metadata) with font size, bold, and italic parameters.",
+      inputSchema: {
+        name: z.string().min(1),
+        fontName: z.string().optional(),
+        size: z.number().int().min(1).max(200).optional(),
+        bold: z.boolean().optional(),
+        italic: z.boolean().optional(),
+        folderName: z.string().optional(),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.createFont(args)),
+  );
+
+  server.registerTool(
+    "gm_font_inspect",
+    {
+      title: "Inspect GameMaker Font asset",
+      description: "Inspect a GameMaker Font asset and return font size, name, bold/italic options.",
+      inputSchema: { name: z.string().min(1) },
+      annotations: READ_ONLY,
+    },
+    async ({ name }) => run(() => project.inspectFont(name)),
+  );
+
+  server.registerTool(
+    "gm_tileset_create",
+    {
+      title: "Create GameMaker Tile Set asset",
+      description: "Create a new GameMaker Tile Set asset (.yy metadata) linked to an existing Sprite.",
+      inputSchema: {
+        name: z.string().min(1),
+        spriteName: z.string().min(1),
+        tileSize: z.number().int().min(1).max(1024).optional(),
+        tileBorder: z.number().int().min(0).max(100).optional(),
+        folderName: z.string().optional(),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.createTileset(args)),
+  );
+
+  server.registerTool(
+    "gm_tileset_inspect",
+    {
+      title: "Inspect GameMaker Tile Set asset",
+      description: "Inspect a GameMaker Tile Set asset and return tile size, border, and linked sprite.",
+      inputSchema: { name: z.string().min(1) },
+      annotations: READ_ONLY,
+    },
+    async ({ name }) => run(() => project.inspectTileset(name)),
+  );
+
+  server.registerTool(
+    "gm_anim_curve_create",
+    {
+      title: "Create Animation Curve asset",
+      description: "Create a new Animation Curve asset with default linear channels.",
+      inputSchema: {
+        name: z.string().min(1),
+        channels: z.array(z.string().min(1)).optional(),
+        folderName: z.string().optional(),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.createAnimCurve(args)),
+  );
+
+  server.registerTool(
+    "gm_anim_curve_inspect",
+    {
+      title: "Inspect Animation Curve asset",
+      description: "Inspect an Animation Curve asset and return defined animation channel names.",
+      inputSchema: { name: z.string().min(1) },
+      annotations: READ_ONLY,
+    },
+    async ({ name }) => run(() => project.inspectAnimCurve(name)),
+  );
+
+  server.registerTool(
+    "gm_particle_system_generate",
+    {
+      title: "Generate Particle System boilerplate",
+      description: "Generate a professional, struct-based GML Particle System manager boilerplate script and register it.",
+      inputSchema: {
+        scriptName: z.string().optional(),
+        folderName: z.string().optional(),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.generateParticleSystem(args)),
+  );
+
+  server.registerTool(
+    "gm_gui_layout_generate",
+    {
+      title: "Generate GUI Layout manager boilerplate",
+      description: "Generate a responsive GML GUI layout manager script and register it in the project.",
+      inputSchema: {
+        scriptName: z.string().optional(),
+        folderName: z.string().optional(),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.generateGuiLayout(args)),
+  );
+
+  server.registerTool(
+    "gm_inventory_system_generate",
+    {
+      title: "Generate Inventory Database boilerplate",
+      description: "Generate a struct-based GML Inventory system manager script and register it in the project.",
+      inputSchema: {
+        scriptName: z.string().optional(),
+        folderName: z.string().optional(),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.generateInventorySystem(args)),
+  );
 }

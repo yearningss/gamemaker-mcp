@@ -232,6 +232,33 @@ void test("powerhouse tools: sprite, sound, state machine, room layer, rename, a
     const renamed = editing.renameAsset({ oldName: "scr_player_fsm", newName: "scr_player_fsm_renamed" });
     assert.equal(renamed.newName, "scr_player_fsm_renamed");
 
+    // Font test
+    const fontRes = project.createFont({ name: "fnt_arial", size: 16, bold: true });
+    assert.equal(fontRes.kind, "font");
+    const fontIns = project.inspectFont("fnt_arial");
+    assert.equal(fontIns.size, 16);
+    assert.equal(fontIns.bold, true);
+
+    // Tileset test
+    const tilesetRes = project.createTileset({ name: "ts_grass", spriteName: "spr_player_idle", tileSize: 32 });
+    assert.equal(tilesetRes.kind, "tileset");
+    const tilesetIns = project.inspectTileset("ts_grass");
+    assert.equal(tilesetIns.tileSize, 32);
+
+    // Anim curve test
+    const curveRes = project.createAnimCurve({ name: "ac_bounce", channels: ["x", "y"] });
+    assert.equal(curveRes.kind, "animcurve");
+    const curveIns = project.inspectAnimCurve("ac_bounce");
+    assert.ok(curveIns.channels.includes("x"));
+
+    // Generators
+    const ps = project.generateParticleSystem({ scriptName: "scr_parts" });
+    assert.equal(ps.kind, "script");
+    const gui = project.generateGuiLayout({ scriptName: "scr_gui" });
+    assert.equal(gui.kind, "script");
+    const inv = project.generateInventorySystem({ scriptName: "scr_inv" });
+    assert.equal(inv.kind, "script");
+
     const fix = project.autofixProject();
     assert.equal(typeof fix.repaired, "boolean");
   } finally {

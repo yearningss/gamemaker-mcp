@@ -839,6 +839,272 @@ function StateMachine(initial_state) constructor {
       tracks: tracks.map((t) => String(t["name"] ?? "unnamed_track")),
     };
   }
+
+  createFont(options: {
+    name: string;
+    fontName?: string | undefined;
+    size?: number | undefined;
+    bold?: boolean | undefined;
+    italic?: boolean | undefined;
+    folderName?: string | undefined;
+  }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const name = safeResourceName(options.name);
+    if (this.resources().some((resource) => resource.name === name)) {
+      throw new Error(`Resource already exists: ${name}`);
+    }
+    const folderName = safeResourceName(options.folderName ?? "Fonts");
+    const folderPath = `folders/${folderName}.yy`;
+    const yyPath = `fonts/${name}/${name}.yy`;
+    this.ensureFolder(folderName, folderPath);
+
+    const font = {
+      $GMFont: "",
+      "%Name": name,
+      fontName: options.fontName ?? "Arial",
+      size: options.size ?? 12,
+      bold: options.bold ?? false,
+      italic: options.italic ?? false,
+      name,
+      parent: { name: folderName, path: folderPath },
+      resourceType: "GMFont",
+      resourceVersion: "2.0",
+    };
+    this.sandbox.atomicWrite(yyPath, stringifyGmJson(font));
+    this.appendProjectResource(name, yyPath);
+    return { name, kind: "font", yyPath };
+  }
+
+  inspectFont(name: string): FontInspection {
+    const resource = this.findResource(name, "font");
+    const text = this.sandbox.readText(resource.path, [".yy"]);
+    const data = requireGmJson<Record<string, unknown>>(text, resource.path);
+    return {
+      name,
+      path: resource.path,
+      fontName: String(data["fontName"] ?? "Arial"),
+      size: Number(data["size"] ?? 12),
+      bold: Boolean(data["bold"] ?? false),
+      italic: Boolean(data["italic"] ?? false),
+    };
+  }
+
+  createTileset(options: {
+    name: string;
+    spriteName: string;
+    tileSize?: number | undefined;
+    tileBorder?: number | undefined;
+    folderName?: string | undefined;
+  }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const name = safeResourceName(options.name);
+    if (this.resources().some((resource) => resource.name === name)) {
+      throw new Error(`Resource already exists: ${name}`);
+    }
+    const folderName = safeResourceName(options.folderName ?? "TileSets");
+    const folderPath = `folders/${folderName}.yy`;
+    const yyPath = `tilesets/${name}/${name}.yy`;
+    this.ensureFolder(folderName, folderPath);
+
+    const tileset = {
+      $GMTileSet: "",
+      "%Name": name,
+      spriteId: { name: options.spriteName, path: `sprites/${options.spriteName}/${options.spriteName}.yy` },
+      tileWidth: options.tileSize ?? 16,
+      tileHeight: options.tileSize ?? 16,
+      tilexoff: 0,
+      tileyoff: 0,
+      tilehsep: options.tileBorder ?? 0,
+      tilevsep: options.tileBorder ?? 0,
+      name,
+      parent: { name: folderName, path: folderPath },
+      resourceType: "GMTileSet",
+      resourceVersion: "2.0",
+    };
+    this.sandbox.atomicWrite(yyPath, stringifyGmJson(tileset));
+    this.appendProjectResource(name, yyPath);
+    return { name, kind: "tileset", yyPath };
+  }
+
+  inspectTileset(name: string): TilesetInspection {
+    const resource = this.findResource(name, "tileset");
+    const text = this.sandbox.readText(resource.path, [".yy"]);
+    const data = requireGmJson<Record<string, unknown>>(text, resource.path);
+    return {
+      name,
+      path: resource.path,
+      spriteName: String((data["spriteId"] as { name?: string } | undefined)?.name ?? ""),
+      tileSize: Number(data["tileWidth"] ?? 16),
+      tileBorder: Number(data["tilehsep"] ?? 0),
+    };
+  }
+
+  createAnimCurve(options: {
+    name: string;
+    channels?: string[] | undefined;
+    folderName?: string | undefined;
+  }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const name = safeResourceName(options.name);
+    if (this.resources().some((resource) => resource.name === name)) {
+      throw new Error(`Resource already exists: ${name}`);
+    }
+    const folderName = safeResourceName(options.folderName ?? "AnimationCurves");
+    const folderPath = `folders/${folderName}.yy`;
+    const yyPath = `animcurves/${name}/${name}.yy`;
+    this.ensureFolder(folderName, folderPath);
+
+    const channels = (options.channels ?? ["y"]).map((cName) => ({
+      $GMAnimCurveChannel: "",
+      name: cName,
+      points: [
+        { x: 0, y: 0 },
+        { x: 1, y: 1 },
+      ],
+      resourceType: "GMAnimCurveChannel",
+      resourceVersion: "2.0",
+    }));
+
+    const animcurve = {
+      $GMAnimCurve: "",
+      "%Name": name,
+      channels,
+      name,
+      parent: { name: folderName, path: folderPath },
+      resourceType: "GMAnimCurve",
+      resourceVersion: "2.0",
+    };
+    this.sandbox.atomicWrite(yyPath, stringifyGmJson(animcurve));
+    this.appendProjectResource(name, yyPath);
+    return { name, kind: "animcurve", yyPath };
+  }
+
+  inspectAnimCurve(name: string): AnimCurveInspection {
+    const resource = this.findResource(name, "animcurve");
+    const text = this.sandbox.readText(resource.path, [".yy"]);
+    const data = requireGmJson<Record<string, unknown>>(text, resource.path);
+    const channels = (data["channels"] as Array<Record<string, unknown>> | undefined) ?? [];
+    return {
+      name,
+      path: resource.path,
+      channels: channels.map((c) => String(c["name"] ?? "y")),
+    };
+  }
+
+  generateParticleSystem(options: {
+    scriptName?: string | undefined;
+    folderName?: string | undefined;
+  }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const name = safeResourceName(options.scriptName ?? "scr_particle_system");
+    const code = `/// @function ParticleSystem() constructor
+/// @description Professional lightweight GML particle system helper.
+function ParticleSystem() constructor {
+    system = part_system_create();
+    emitters = {};
+
+    static addEmitter = function(name, xmin, xmax, ymin, ymax, shape, distribution) {
+        var emit = part_emitter_create(system);
+        part_emitter_region(system, emit, xmin, xmax, ymin, ymax, shape, distribution);
+        emitters[$ name] = emit;
+        return self;
+    };
+
+    static addType = function(name, sprite, speed_min, speed_max, speed_incr, speed_wiggle) {
+        var pt = part_type_create();
+        if (sprite_exists(sprite)) {
+            part_type_sprite(pt, sprite, true, true, false);
+        }
+        part_type_speed(pt, speed_min, speed_max, speed_incr, speed_wiggle);
+        part_type_direction(pt, 0, 360, 0, 0);
+        part_type_life(pt, 20, 60);
+        return pt;
+    };
+
+    static destroy = function() {
+        part_system_destroy(system);
+    };
+}
+`;
+    return this.createScript(name, code, options.folderName ?? "Scripts");
+  }
+
+  generateGuiLayout(options: {
+    scriptName?: string | undefined;
+    folderName?: string | undefined;
+  }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const name = safeResourceName(options.scriptName ?? "scr_gui_layout");
+    const code = `/// @function GuiLayout() constructor
+/// @description Responsive layout utility for screen coordinates positioning.
+function GuiLayout() constructor {
+    static getWidth = function() {
+        return display_get_gui_width();
+    };
+
+    static getHeight = function() {
+        return display_get_gui_height();
+    };
+
+    static center = function(width, height) {
+        return {
+            x: (display_get_gui_width() - width) / 2,
+            y: (display_get_gui_height() - height) / 2
+        };
+    };
+
+    static drawButton = function(x, y, width, height, text, hover) {
+        draw_set_color(hover ? c_white : c_gray);
+        draw_rectangle(x, y, x + width, y + height, false);
+        draw_set_color(c_black);
+        draw_text(x + 10, y + 10, text);
+    };
+}
+`;
+    return this.createScript(name, code, options.folderName ?? "Scripts");
+  }
+
+  generateInventorySystem(options: {
+    scriptName?: string | undefined;
+    folderName?: string | undefined;
+  }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const name = safeResourceName(options.scriptName ?? "scr_inventory");
+    const code = `/// @function Inventory(max_slots) constructor
+/// @description Struct-based flexible inventory database system.
+function Inventory(max_slots) constructor {
+    slots = array_create(max_slots, undefined);
+    capacity = max_slots;
+
+    static addItem = function(item_id, quantity) {
+        for (var i = 0; i < capacity; i++) {
+            if (slots[i] == undefined) {
+                slots[i] = { id: item_id, count: quantity };
+                return true;
+            } else if (slots[i].id == item_id) {
+                slots[i].count += quantity;
+                return true;
+            }
+        }
+        return false;
+    };
+
+    static removeItem = function(item_id, quantity) {
+        for (var i = 0; i < capacity; i++) {
+            if (slots[i] != undefined && slots[i].id == item_id) {
+                slots[i].count -= quantity;
+                if (slots[i].count <= 0) {
+                    slots[i] = undefined;
+                }
+                return true;
+            }
+        }
+        return false;
+    };
+}
+`;
+    return this.createScript(name, code, options.folderName ?? "Scripts");
+  }
 }
 
 export interface SpriteInspection {
@@ -877,6 +1143,29 @@ export interface SequenceInspection {
   playbackSpeed: number;
   tracksCount: number;
   tracks: string[];
+}
+
+export interface FontInspection {
+  name: string;
+  path: string;
+  fontName: string;
+  size: number;
+  bold: boolean;
+  italic: boolean;
+}
+
+export interface TilesetInspection {
+  name: string;
+  path: string;
+  spriteName: string;
+  tileSize: number;
+  tileBorder: number;
+}
+
+export interface AnimCurveInspection {
+  name: string;
+  path: string;
+  channels: string[];
 }
 
 export const supportedEventNames = Object.keys(EVENT_MAP) as SupportedEventName[];

@@ -76,6 +76,15 @@ const EXPECTED_TOOLS = [
   "gm_room_layer_add",
   "gm_asset_rename",
   "gm_project_autofix",
+  "gm_font_create",
+  "gm_font_inspect",
+  "gm_tileset_create",
+  "gm_tileset_inspect",
+  "gm_anim_curve_create",
+  "gm_anim_curve_inspect",
+  "gm_particle_system_generate",
+  "gm_gui_layout_generate",
+  "gm_inventory_system_generate",
 ] as const;
 
 test("stdio MCP exposes the complete extended GameMaker toolset", async () => {
