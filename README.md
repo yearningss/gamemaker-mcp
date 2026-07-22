@@ -11,16 +11,17 @@ The server uses the stable `@modelcontextprotocol/sdk` v1 line over `stdio`. It 
 
 ## Highlights
 
-- 67 MCP tools, 10 reusable workflow prompts, and 6 project resources;
+- 76 MCP tools, 10 reusable workflow prompts, and 6 project resources;
 - zero-config workspace auto-detection (open any GameMaker project folder in your AI client);
 - CLI installer & manager (`gamemaker-mcp install`, `doctor`, `connect`);
 - tolerant parsing of GameMaker `.yyp`/`.yy` JSON-like files, including trailing commas;
-- project, asset, room, object-event, sprite, sound, sequence, and shader inspection;
+- project, asset, room, object-event, sprite, sound, sequence, font, tileset, animation curve, and shader inspection;
 - GML symbol/complexity diagnostics, FPS profiler, i18n scanner, draw state auditor, health score (0-100%), object hierarchy tree, doc exporter, and duplicate code finder;
 - preflight GML syntax validator (`gm_gml_validate_snippet`) and Feather JSDoc generator (`gm_gml_docgen`);
 - exact GML patch previews and guarded writes;
 - GameMaker folder, object, script, shader, object-event, room-setting, room instance placement, and room-creation-code operations;
 - integrity-checked project snapshots and guarded restoration;
+- GML Finite State Machine, Particle System, GUI layout, and Inventory system boilerplate generators;
 - synchronous compile plus persistent background Igor Compile/PackageZip jobs, status, wait, and cancellation;
 - automatic GameMaker runtime and `Igor.exe` discovery;
 - project-root path sandbox, symlink/junction checks, per-file limits, read-only mode, and build opt-in.
@@ -168,7 +169,7 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 | `GAMEMAKER_RUNTIME` | inferred | Runtime directory paired with Igor |
 | `GAMEMAKER_USER_DIR` | auto-detect | GameMaker user/configuration directory |
 
-## Complete Tool Catalog (67 Tools)
+## Complete Tool Catalog (76 Tools)
 
 ### Project & Navigation (10 Tools)
 
@@ -203,7 +204,7 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 | `gm_doc_export` | Generate structured Markdown documentation for all project assets |
 | `gm_gml_duplicate_find` | Scan project GML files to detect identical contiguous code blocks across assets |
 
-### GML, Assets & Resources (15 Tools)
+### GML, Assets & Resources (22 Tools)
 
 | Tool | Purpose |
 |---|---|
@@ -215,9 +216,16 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 | `gm_sprite_create` | Create a new GameMaker Sprite asset (`.yy`) with configurable dimensions, origin, and texture group |
 | `gm_sound_inspect` | Inspect sound audio group, compression type, sample rate, bit depth/rate, duration, and volume |
 | `gm_sound_create` | Create a new GameMaker Sound asset (`.yy`) linking sound audio files with compression and volume |
+| `gm_font_create` | Create a new GameMaker Font asset (`.yy` metadata) with font size, bold, and italic parameters |
+| `gm_font_inspect` | Inspect a GameMaker Font asset and return font size, name, bold/italic options |
+| `gm_tileset_create` | Create a new GameMaker Tile Set asset (`.yy` metadata) linked to an existing Sprite |
+| `gm_tileset_inspect` | Inspect a GameMaker Tile Set asset and return tile size, border, and linked sprite |
 | `gm_folder_create` | Create or repair an asset-browser folder/YPP entry |
 | `gm_script_create` | Create script metadata and GML source |
 | `gm_state_machine_generate` | Generate a clean, struct-based GML Finite State Machine controller script (`scr_state_machine`) |
+| `gm_particle_system_generate` | Generate a professional, struct-based GML Particle System manager boilerplate script |
+| `gm_gui_layout_generate` | Generate a responsive GML GUI layout manager script and register it |
+| `gm_inventory_system_generate` | Generate a struct-based GML Inventory system manager script and register it |
 | `gm_asset_rename` | Safely rename any asset on disk, in YYP/YY metadata, and refactor all GML references project-wide |
 | `gm_note_create` | Create a new GameMaker Note asset (`notes/NoteName/NoteName.txt`) with documentation text |
 | `gm_note_inspect` | Read text documentation content, line count, file paths, and SHA-256 hash of a Note asset |
@@ -236,7 +244,7 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 | `gm_object_event_remove` | Remove a common named event; code deletion is opt-in |
 | `gm_object_event_remove_raw` | Precisely remove any numeric/collision event |
 
-### Rooms, Shaders & Sequences (9 Tools)
+### Rooms, Shaders, Sequences & Curves (11 Tools)
 
 | Tool | Purpose |
 |---|---|
@@ -249,6 +257,8 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 | `gm_shader_inspect` | Stage hashes, uniforms, attributes, varyings, and interface issues |
 | `gm_shader_update` | Guarded per-stage source update with preflight of both hashes |
 | `gm_sequence_inspect` | Inspect Sequence tracks, length, playback speed, and keyframes |
+| `gm_anim_curve_create` | Create a new Animation Curve asset with default linear channels |
+| `gm_anim_curve_inspect` | Inspect an Animation Curve asset and return defined animation channel names |
 
 ### Snapshots & Integrity (4 Tools)
 
