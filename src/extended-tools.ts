@@ -2,7 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 
 import { GameMakerEditingService, extendedEventNames } from "./editing.js";
-import { GameMakerProject } from "./project.js";
+import { GameMakerProject, supportedEventNames } from "./project.js";
 
 const READ_ONLY = {
   readOnlyHint: true,
@@ -651,5 +651,30 @@ export function registerExtendedTools(server: McpServer, project: GameMakerProje
       annotations: READ_ONLY,
     },
     async ({ path }) => run(() => project.visualizeStateMachine(path)),
+  );
+
+  server.registerTool(
+    "gm_object_event_chain",
+    {
+      title: "Resolve GameMaker object event inheritance chain",
+      description: "Traverse parent hierarchy of an object and return implementing event files, line counts, and paths.",
+      inputSchema: {
+        objectName: z.string().min(1),
+        eventName: z.enum(supportedEventNames as any),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.getObjectEventChain(args as any)),
+  );
+
+  server.registerTool(
+    "gm_gml_dead_code_detect",
+    {
+      title: "Detect unused GML script functions",
+      description: "Scan GML scripts and objects to detect declared functions that are never called anywhere in the project.",
+      inputSchema: {},
+      annotations: READ_ONLY,
+    },
+    async () => run(() => project.detectDeadCode()),
   );
 }

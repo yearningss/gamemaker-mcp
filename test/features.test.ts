@@ -291,6 +291,52 @@ void test("powerhouse tools: sprite, sound, state machine, room layer, rename, a
     assert.ok(fsmVis.states.includes("RUN"));
     assert.ok(fsmVis.mermaid.includes("stateDiagram-v2"));
 
+    // Event chain test
+    const parentObj = editing.createObject({ name: "obj_actor" });
+    const childObj = editing.createObject({ name: "obj_hero" });
+    const heroSha = project.sandbox.sha256For(childObj.yyPath as string);
+    editing.configureObject({
+      objectName: "obj_hero",
+      expectedObjectSha256: heroSha,
+      parentObjectName: "obj_actor",
+    });
+
+    const actorSha = project.sandbox.sha256For(parentObj.yyPath as string);
+    project.upsertObjectEvent({
+      objectName: "obj_actor",
+      event: "create",
+      code: "hp = 100;",
+      expectedObjectSha256: actorSha,
+    });
+
+    const chainInfo = project.getObjectEventChain({
+      objectName: "obj_hero",
+      eventName: "create",
+    });
+    assert.equal(chainInfo.chain.length, 2);
+    assert.equal(chainInfo.chain[0]?.objectName, "obj_hero");
+    assert.equal(chainInfo.chain[0]?.implementsEvent, false);
+    assert.equal(chainInfo.chain[1]?.objectName, "obj_actor");
+    assert.equal(chainInfo.chain[1]?.implementsEvent, true);
+
+    // Dead GML code detect test
+    project.createScript(
+      "scr_combat",
+      `function take_damage() { hp -= 10; }\nfunction unused_combat_function() { show_debug_message('Dead code'); }`
+    );
+
+    const actorSha2 = project.sandbox.sha256For(parentObj.yyPath as string);
+    project.upsertObjectEvent({
+      objectName: "obj_actor",
+      event: "step",
+      code: "take_damage();",
+      expectedObjectSha256: actorSha2,
+    });
+
+    const deadFunctions = project.detectDeadCode();
+    assert.ok(deadFunctions.some((f) => f.functionName === "unused_combat_function"));
+    assert.ok(!deadFunctions.some((f) => f.functionName === "take_damage"));
+
     const fix = project.autofixProject();
     assert.equal(typeof fix.repaired, "boolean");
   } finally {

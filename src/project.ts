@@ -1276,6 +1276,132 @@ function Inventory(max_slots) constructor {
       mermaid,
     };
   }
+
+  getObjectEventChain(options: {
+    objectName: string;
+    eventName: SupportedEventName;
+  }): EventChain {
+    const startName = safeResourceName(options.objectName);
+    const eventSpec = EVENT_MAP[options.eventName];
+    if (!eventSpec) {
+      throw new Error(`Unsupported event name: ${options.eventName}`);
+    }
+
+    const chain: EventChainLink[] = [];
+    let currentName: string | undefined = startName;
+
+    while (currentName) {
+      const resource = this.resources().find((r) => r.name === currentName && r.kind === "object");
+      if (!resource) {
+        chain.push({
+          objectName: currentName,
+          implementsEvent: false,
+        });
+        break;
+      }
+
+      const text = this.sandbox.readText(resource.path, [".yy"]);
+      const data = requireGmJson<Record<string, unknown>>(text, resource.path);
+      const events = (data["eventList"] as ObjectEvent[] | undefined) ?? [];
+      const parentId = (data["parentObjectId"] as { name?: string } | undefined)?.name;
+
+      const implementsEvent = events.some(
+        (e) => e.eventType === eventSpec.eventType && e.eventNum === eventSpec.eventNum
+      );
+
+      let eventPath: string | undefined;
+      let lineCount: number | undefined;
+
+      if (implementsEvent) {
+        eventPath = `objects/${currentName}/${eventSpec.file}`;
+        try {
+          const content = this.sandbox.readText(eventPath, [".gml"]);
+          lineCount = content.split(/\r?\n/).length;
+        } catch {}
+      }
+
+      chain.push({
+        objectName: currentName,
+        implementsEvent,
+        eventPath,
+        lineCount,
+      });
+
+      currentName = parentId;
+    }
+
+    return {
+      objectName: startName,
+      eventName: options.eventName,
+      chain,
+    };
+  }
+
+  detectDeadCode(): Array<{ file: string; line: number; functionName: string }> {
+    const functionDeclarations: Array<{ file: string; line: number; functionName: string }> = [];
+    const functionReferences = new Map<string, number>();
+
+    const gmlFiles: Array<{ file: string; content: string }> = [];
+    for (const r of this.resources()) {
+      if (r.kind === "script" || r.kind === "object") {
+        try {
+          const asset = this.readAsset(r.name, r.kind);
+          for (const f of asset.files) {
+            if (f.path.endsWith(".gml")) {
+              gmlFiles.push({ file: f.path, content: f.content });
+            }
+          }
+        } catch {}
+      }
+    }
+
+    const funcDeclRegex = /\bfunction\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(/g;
+
+    for (const f of gmlFiles) {
+      const lines = f.content.split(/\r?\n/);
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i]!;
+        let match: RegExpExecArray | null;
+        funcDeclRegex.lastIndex = 0;
+        while ((match = funcDeclRegex.exec(line)) !== null) {
+          const functionName = match[1];
+          if (functionName) {
+            functionDeclarations.push({
+              file: f.file,
+              line: i + 1,
+              functionName,
+            });
+            functionReferences.set(functionName, 0);
+          }
+        }
+      }
+    }
+
+    for (const f of gmlFiles) {
+      for (const decl of functionDeclarations) {
+        const refRegex = new RegExp(`\\b${decl.functionName}\\b`, "g");
+        const lines = f.content.split(/\r?\n/);
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i]!;
+          if (f.file === decl.file && i + 1 === decl.line) {
+            continue;
+          }
+          
+          let match: RegExpExecArray | null;
+          refRegex.lastIndex = 0;
+          while ((match = refRegex.exec(line)) !== null) {
+            const isDecl = new RegExp(`\\bfunction\\s+${decl.functionName}\\b`).test(line);
+            if (!isDecl) {
+              const currentCount = functionReferences.get(decl.functionName) ?? 0;
+              functionReferences.set(decl.functionName, currentCount + 1);
+            }
+          }
+        }
+      }
+    }
+
+    return functionDeclarations.filter((d) => (functionReferences.get(d.functionName) ?? 0) === 0);
+  }
 }
 
 export interface SpriteInspection {
@@ -1357,6 +1483,19 @@ export interface StateMachineVisualization {
   states: string[];
   transitions: Array<{ from: string; to: string; trigger?: string }>;
   mermaid: string;
+}
+
+export interface EventChainLink {
+  objectName: string;
+  implementsEvent: boolean;
+  eventPath?: string | undefined;
+  lineCount?: number | undefined;
+}
+
+export interface EventChain {
+  objectName: string;
+  eventName: string;
+  chain: EventChainLink[];
 }
 
 export const supportedEventNames = Object.keys(EVENT_MAP) as SupportedEventName[];

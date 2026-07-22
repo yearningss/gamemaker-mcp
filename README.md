@@ -11,12 +11,12 @@ The server uses the stable `@modelcontextprotocol/sdk` v1 line over `stdio`. It 
 
 ## Highlights
 
-- 81 MCP tools, 10 reusable workflow prompts, and 6 project resources;
+- 83 MCP tools, 10 reusable workflow prompts, and 6 project resources;
 - zero-config workspace auto-detection (open any GameMaker project folder in your AI client);
 - CLI installer & manager (`gamemaker-mcp install`, `doctor`, `connect`);
 - tolerant parsing of GameMaker `.yyp`/`.yy` JSON-like files, including trailing commas;
-- project, asset, room, object-event, sprite, sound, sequence, font, tileset, animation curve, timeline, and shader inspection;
-- GML symbol/complexity diagnostics, FPS profiler, i18n scanner, draw state auditor, health score (0-100%), object hierarchy tree, doc exporter, state machine visualizer, and duplicate code finder;
+- project, asset, room, object-event, object-inheritance, sprite, sound, sequence, font, tileset, animation curve, timeline, and shader inspection;
+- GML symbol/complexity diagnostics, FPS profiler, i18n scanner, draw state auditor, health score (0-100%), object hierarchy tree, doc exporter, state machine visualizer, dead GML code detector, and duplicate code finder;
 - preflight GML syntax validator (`gm_gml_validate_snippet`), Igor diagnostic compiler (`gm_project_compile_errors`), and Feather JSDoc generator (`gm_gml_docgen`);
 - exact GML patch previews and guarded writes;
 - GameMaker folder, object, script, shader, object-event, timeline, room-setting, room instance placement, and room-creation-code operations;
@@ -169,7 +169,7 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 | `GAMEMAKER_RUNTIME` | inferred | Runtime directory paired with Igor |
 | `GAMEMAKER_USER_DIR` | auto-detect | GameMaker user/configuration directory |
 
-## Complete Tool Catalog (81 Tools)
+## Complete Tool Catalog (83 Tools)
 
 ### Project & Navigation (10 Tools)
 
@@ -186,7 +186,7 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 | `gm_project_statistics` | Resource, file, line, complexity, shader, and dependency statistics |
 | `gm_project_autofix` | Scan and automatically repair missing YYP references, missing shader files, and corrupted metadata |
 
-### Static Analysis & Quality Audit (15 Tools)
+### Static Analysis & Quality Audit (16 Tools)
 
 | Tool | Purpose |
 |---|---|
@@ -205,6 +205,7 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 | `gm_gml_duplicate_find` | Scan project GML files to detect identical contiguous code blocks across assets |
 | `gm_macros_list` | Scan all scripts and objects to extract and list GML #macro definitions |
 | `gm_state_machine_visualize` | Parse GML code to extract states and transitions, returning a Mermaid stateDiagram-v2 string |
+| `gm_gml_dead_code_detect` | Scan GML scripts and objects to detect declared functions that are never called anywhere in the project |
 
 ### GML, Assets & Resources (22 Tools)
 
@@ -233,7 +234,7 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 | `gm_note_inspect` | Read text documentation content, line count, file paths, and SHA-256 hash of a Note asset |
 | `gm_note_update` | Guardedly update text content of a GameMaker Note asset with SHA-256 concurrency check |
 
-### Objects & Events (8 Tools)
+### Objects & Events (9 Tools)
 
 | Tool | Purpose |
 |---|---|
@@ -245,6 +246,7 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 | `gm_object_event_upsert` | Add or replace a common named event |
 | `gm_object_event_remove` | Remove a common named event; code deletion is opt-in |
 | `gm_object_event_remove_raw` | Precisely remove any numeric/collision event |
+| `gm_object_event_chain` | Traverse parent hierarchy of an object and return implementing event files, line counts, and paths |
 
 ### Rooms, Shaders, Sequences, Timelines & Curves (13 Tools)
 
