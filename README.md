@@ -346,11 +346,19 @@ The server intentionally does not expose arbitrary shell commands, arbitrary YY/
 
 ## Special Thanks (Not Really)
 
-A special shoutout to **Jon Peterson ([PixelatedPope](https://www.youtube.com/@PixelatedPope))** for his unprofessional, rude, and toxic comment regarding this tool and AI assistance in GameMaker development:
+A special shoutout to **Jon Peterson ([PixelatedPope](https://www.youtube.com/@PixelatedPope))** for his hostile comment regarding this tool and AI assistance in GameMaker development:
 
 > "Sorry, he meant 'Real' Game Devs. Not lazy fucks who rely on stolen works"
 
 ![PixelatedPope Comment](images/pope_comment.jpg)
 
-While some choose to gatekeep game development and throw insults at open-source AI integrations, we continue to build safe, project-aware developer tooling to make GameMaker Studio 2 and the new GMRT runtime accessible and efficient for everyone. 🚀
+### A Striking Irony in the GameMaker Community
+
+It is deeply disappointing to see this kind of reaction from a prominent community educator whose content has helped many beginners get started with coding.
+
+*   **The Mentorship Paradox:** The core mission of an educator is to lower the barrier to entry and make development accessible. AI-assisted tooling (like this MCP server) does exactly that—democratizing learning by offering a 24/7 interactive helper that explains GML concepts and catches errors.
+*   **The Cycle of Gatekeeping:** Every major technology leap in game development has faced this defensive reaction. High-level language users were once called "lazy" by assembly developers; GameMaker users were ridiculed by custom-engine purists. Today, manual coders repeat history by gatekeeping AI tools.
+*   **Evolution, Not Theft:** Claiming that AI tools rely on "stolen works" overlooks how learning works. Just as humans learn by observing patterns in code, libraries, and tutorials, LLMs learn syntax structure.
+
+While some choose to throw insults and protect legacy gatekeeping, we will continue building modern, open-source, project-aware developer tooling to make GameMaker Studio and the new GMRT runtime more accessible, efficient, and powerful for everyone. 🚀
 
