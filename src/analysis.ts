@@ -1477,6 +1477,19 @@ export function validateGmlSnippet(gmlCode: string): GmlSnippetValidationResult 
       }
     }
 
+    const gmrtIncompatibleBuiltins = [
+      "flexpanel_node_get_measure",
+      "flexpanel_node_set_measure",
+      "vertex_buffer_exists",
+      "vertex_format_exists",
+      "application_surface_is_draw_enabled",
+    ];
+    for (const inc of gmrtIncompatibleBuiltins) {
+      if (new RegExp(`\\b${inc}\\b`).test(codePart)) {
+        warnings.push({ line: lineNum, message: `GMRT 0.20.0 Compatibility: '${inc}' is not currently supported by the new GameMaker Runtime (GMRT)` });
+      }
+    }
+
     if (/\bargument[0-9]+\b|\bargument\[\d+\]\b/.test(codePart)) {
       warnings.push({ line: lineNum, message: "Legacy argument0..15 detected. Use named parameters in function(...) syntax." });
     }

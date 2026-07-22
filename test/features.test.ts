@@ -143,11 +143,12 @@ void test("findUnusedAssets detects unreferenced resources", () => {
 });
 
 void test("validateGmlSnippet detects mismatched braces and warnings", () => {
-  const badGml = "function test() {\n  if (a = b) {\n    var x = 5;\n";
+  const badGml = "function test() {\n  if (a = b) {\n    var x = 5;\n    flexpanel_node_get_measure();\n";
   const res = validateGmlSnippet(badGml);
   assert.equal(res.valid, false);
   assert.ok(res.errors.some((e: { message: string }) => e.message.includes("Mismatched braces")));
   assert.ok(res.warnings.some((w: { message: string }) => w.message.includes("equality comparison")));
+  assert.ok(res.warnings.some((w: { message: string }) => w.message.includes("GMRT 0.20.0 Compatibility")));
 });
 
 void test("profileCheck, i18nScan, and drawStateAudit analyze GML code", () => {

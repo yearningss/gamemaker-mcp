@@ -255,7 +255,8 @@ export function registerAnalysisTools(server: McpServer, project: GameMakerProje
             "4. ALWAYS check 'instance_exists(_inst)' or 'sprite_exists(_spr)' before referencing dynamically.\n" +
             "5. ALWAYS add Feather JSDoc headers ('/// @function', '/// @param', '/// @returns') to script files.\n" +
             "6. Use modern array functions ('array_push', 'array_length') and struct constructors ('function Person() constructor {}').\n" +
-            "7. ALWAYS preflight snippets with 'gm_gml_validate_snippet' before editing files.",
+            "7. ALWAYS preflight snippets with 'gm_gml_validate_snippet' before editing files.\n" +
+            "8. GMRT 0.20+ Compatibility: Avoid GMRT-incompatible features (flexpanel_node_get_measure/set_measure, vertex_buffer_exists, vertex_format_exists, application_surface_is_draw_enabled). Utilize new ImGUI debug watch functions (dbg_slider, dbg_watch) and GM3D APIs for modern 3D scenes.",
         },
       ],
     }),
