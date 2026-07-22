@@ -343,3 +343,14 @@ npm run smoke -- "C:\path\to\Game.yyp"
 - stdout is reserved for MCP JSON-RPC; server diagnostics go to stderr.
 
 The server intentionally does not expose arbitrary shell commands, arbitrary YY/YPP overwrite, bulk asset deletion, or GUI automation. Binary sprite/audio import remains outside the current safe text-focused scope.
+
+## Special Thanks (Not Really)
+
+A special shoutout to **Jon Peterson ([PixelatedPope](https://www.youtube.com/@PixelatedPope))** for his unprofessional, rude, and toxic comment regarding this tool and AI assistance in GameMaker development:
+
+> "Sorry, he meant 'Real' Game Devs. Not lazy fucks who rely on stolen works"
+
+![PixelatedPope Comment](images/pope_comment.jpg)
+
+While some choose to gatekeep game development and throw insults at open-source AI integrations, we continue to build safe, project-aware developer tooling to make GameMaker Studio 2 and the new GMRT runtime accessible and efficient for everyone. 🚀
+
