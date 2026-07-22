@@ -11,18 +11,18 @@ The server uses the stable `@modelcontextprotocol/sdk` v1 line over `stdio`. It 
 
 ## Highlights
 
-- 83 MCP tools, 10 reusable workflow prompts, and 6 project resources;
+- 86 MCP tools, 10 reusable workflow prompts, and 6 project resources;
 - zero-config workspace auto-detection (open any GameMaker project folder in your AI client);
 - CLI installer & manager (`gamemaker-mcp install`, `doctor`, `connect`);
 - tolerant parsing of GameMaker `.yyp`/`.yy` JSON-like files, including trailing commas;
 - project, asset, room, object-event, object-inheritance, sprite, sound, sequence, font, tileset, animation curve, timeline, and shader inspection;
 - GML symbol/complexity diagnostics, FPS profiler, i18n scanner, draw state auditor, health score (0-100%), object hierarchy tree, doc exporter, state machine visualizer, dead GML code detector, and duplicate code finder;
-- preflight GML syntax validator (`gm_gml_validate_snippet`), Igor diagnostic compiler (`gm_project_compile_errors`), and Feather JSDoc generator (`gm_gml_docgen`);
+- preflight GML syntax validator (`gm_gml_validate_snippet`), Igor diagnostic compiler (`gm_project_compile_errors`), GML Unit Test suite runner (`gm_test_runner_run`), and Feather JSDoc generator (`gm_gml_docgen`);
 - exact GML patch previews and guarded writes;
-- GameMaker folder, object, script, shader, object-event, timeline, room-setting, room instance placement, and room-creation-code operations;
+- GameMaker folder, object, script, shader, object-event, timeline, test suite, room-setting, room instance placement, and room-creation-code operations;
 - integrity-checked project snapshots and guarded restoration;
-- GML Finite State Machine, Particle System, GUI layout, and Inventory system boilerplate generators;
-- synchronous compile plus persistent background Igor Compile/PackageZip jobs, status, wait, and cancellation;
+- GML Finite State Machine, Particle System, GUI layout, and Inventory system boilerplate generators, plus a GML Unit Testing Framework scaffold;
+- synchronous compile/run plus persistent background Igor Compile/PackageZip jobs, status, wait, and cancellation;
 - automatic GameMaker runtime and `Igor.exe` discovery;
 - project-root path sandbox, symlink/junction checks, per-file limits, read-only mode, and build opt-in.
 
@@ -275,12 +275,15 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 | `gm_snapshot_inspect` | Verify and compare a snapshot |
 | `gm_snapshot_restore` | Restore recorded files with integrity checks and backups |
 
-### Builds & Igor Compiler Jobs (8 Tools)
+### Builds & Igor Compiler Jobs (11 Tools)
 
 | Tool | Purpose |
 |---|---|
 | `gm_compile_sync` | Synchronous Windows VM compile through Igor.exe |
 | `gm_project_compile_errors` | Compile project with Igor and return parsed, structured file/line/message syntax errors |
+| `gm_test_framework_init` | Initialize the GML Unit Testing Framework script (scr_test_framework) in the project |
+| `gm_test_suite_create` | Create a new GML test suite script and register it in the Unit Testing Framework |
+| `gm_test_runner_run` | Inject runner code, build & run project in background, capture and parse unit tests results |
 | `gm_job_compile_start` | Start persistent background Igor `compile` job |
 | `gm_job_package_zip_start` | Start persistent background Igor `package-zip` job |
 | `gm_job_status` | Read live/persisted job state and artifact information |

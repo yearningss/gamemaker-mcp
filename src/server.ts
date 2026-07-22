@@ -192,6 +192,112 @@ export function createServer(config: ServerConfig): McpServer {
   );
 
   server.registerTool(
+    "gm_test_framework_init",
+    {
+      title: "Initialize GML Unit Testing Framework",
+      description: "Create the GML Unit Testing Framework script (scr_test_framework) in the project.",
+      inputSchema: {},
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    async () => run(() => project.initTestFramework()),
+  );
+
+  server.registerTool(
+    "gm_test_suite_create",
+    {
+      title: "Create GML Unit Test Suite",
+      description: "Create a new GML test suite script and register it in the Unit Testing Framework.",
+      inputSchema: {
+        suiteName: z.string().min(1),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+    },
+    async (args) => run(() => project.createTestSuite(args)),
+  );
+
+  server.registerTool(
+    "gm_test_runner_run",
+    {
+      title: "Run GML Unit Tests in GameMaker",
+      description: "Inject runner code, build & run the project, capture and parse passed/failed GML unit tests, and restore project room code.",
+      inputSchema: {
+        timeoutMs: z.number().int().min(5_000).max(600_000).optional(),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+    },
+    async (args) => run(async () => {
+      const setup = project.setupTestRunner();
+
+      const result = await igor.runGame({
+        timeoutMs: args.timeoutMs,
+        targetRoomPath: setup.targetRoomPath,
+        targetRoomCreationCodePath: setup.targetRoomCreationCodePath,
+        originalRoomText: setup.originalRoomText,
+        originalCreationCodeText: setup.originalCreationCodeText,
+      });
+
+      const testLines = result.stdout.split(/\r?\n/);
+      const tests: Array<{ name: string; status: "PASS" | "FAIL"; error?: string }> = [];
+      let passedCount = 0;
+      let failedCount = 0;
+      let inTestSection = false;
+
+      for (const line of testLines) {
+        if (line.includes("=== GML TEST RUN START ===")) {
+          inTestSection = true;
+          continue;
+        }
+        if (line.includes("=== GML TEST RUN END ===")) {
+          inTestSection = false;
+          continue;
+        }
+        if (inTestSection) {
+          if (line.includes("[PASS]")) {
+            const name = line.replace(/.*\[PASS\]\s*/, "").trim();
+            tests.push({ name, status: "PASS" });
+            passedCount++;
+          } else if (line.includes("[FAIL]")) {
+            const raw = line.replace(/.*\[FAIL\]\s*/, "").trim();
+            const dashIndex = raw.indexOf(" - ");
+            if (dashIndex >= 0) {
+              const name = raw.substring(0, dashIndex).trim();
+               const error = raw.substring(dashIndex + 3).trim();
+              tests.push({ name, status: "FAIL", error });
+            } else {
+              tests.push({ name: raw, status: "FAIL" });
+            }
+            failedCount++;
+          }
+        }
+      }
+
+      return {
+        ok: result.ok && failedCount === 0,
+        passedCount,
+        failedCount,
+        durationMs: result.durationMs,
+        tests,
+        stdout: result.stdout,
+      };
+    }),
+  );
+
+  server.registerTool(
     "gm_gml_write",
     {
       title: "Write GML safely",

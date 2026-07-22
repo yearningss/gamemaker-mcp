@@ -406,6 +406,105 @@ export class IgorService {
     };
   }
 
+  async runGame(options: {
+    timeoutMs?: number | undefined;
+    targetRoomPath?: string | undefined;
+    targetRoomCreationCodePath?: string | undefined;
+    originalRoomText?: string | undefined;
+    originalCreationCodeText?: string | undefined;
+  } = {}): Promise<BuildResult> {
+    if (!this.config.allowBuild) {
+      throw new Error("Builds are disabled. Set GAMEMAKER_MCP_ALLOW_BUILD=1 to enable them.");
+    }
+    if (this.active) throw new Error("A GameMaker build/run is already running");
+    const runtime = this.resolveRuntime(true)!;
+    const timeoutMs = Math.min(10 * 60_000, Math.max(5_000, options.timeoutMs ?? 60_000));
+    const workRoot = path.join(this.config.projectRoot, ".gamemaker-mcp");
+    const cache = path.join(workRoot, "cache");
+    const temp = path.join(workRoot, "temp");
+    const outputFile = path.join(temp, `${path.basename(this.config.projectFile, ".yyp")}.win`);
+    fs.mkdirSync(cache, { recursive: true });
+    fs.mkdirSync(temp, { recursive: true });
+
+    const args = [
+      "-j=4",
+      `--project=${this.config.projectFile}`,
+      `--runtimePath=${runtime.runtimePath}`,
+      "--runtime=VM",
+      `--cache=${cache}`,
+      `--temp=${temp}`,
+      `--of=${outputFile}`,
+      "--jsonErrors",
+    ];
+    const userDir = this.config.userDir ?? discoverUserDir();
+    if (userDir) args.push(`--user=${userDir}`);
+    args.push("windows", "Run");
+
+    this.active = true;
+    const started = Date.now();
+    try {
+      return await new Promise<BuildResult>((resolve, reject) => {
+        let stdout = "";
+        let stderr = "";
+        let timedOut = false;
+        const child = spawn(runtime.igorPath, args, {
+          cwd: this.config.projectRoot,
+          shell: false,
+          windowsHide: true,
+          env: process.env,
+        });
+
+        const timer = setTimeout(() => {
+          timedOut = true;
+          child.kill();
+        }, timeoutMs);
+
+        child.stdout.on("data", (chunk: Buffer) => {
+          stdout = appendLimited(stdout, chunk);
+        });
+        child.stderr.on("data", (chunk: Buffer) => {
+          stderr = appendLimited(stderr, chunk);
+        });
+        child.on("error", (error) => {
+          clearTimeout(timer);
+          reject(error);
+        });
+        child.on("close", (exitCode) => {
+          clearTimeout(timer);
+          const combined = `${stdout}\n${stderr}`;
+          resolve({
+            ok: exitCode === 0 && !timedOut,
+            exitCode,
+            timedOut,
+            durationMs: Date.now() - started,
+            outputFile,
+            stdout,
+            stderr,
+            diagnostics: diagnosticsFrom(combined),
+            command: runtime.igorPath,
+            args,
+          });
+        });
+      });
+    } finally {
+      this.active = false;
+      if (options.targetRoomPath && options.originalRoomText !== undefined) {
+        try {
+          fs.writeFileSync(path.join(this.config.projectRoot, options.targetRoomPath), options.originalRoomText, "utf8");
+        } catch {}
+      }
+      if (options.targetRoomCreationCodePath) {
+        try {
+          if (options.originalCreationCodeText !== undefined) {
+            fs.writeFileSync(path.join(this.config.projectRoot, options.targetRoomCreationCodePath), options.originalCreationCodeText, "utf8");
+          } else {
+            fs.unlinkSync(path.join(this.config.projectRoot, options.targetRoomCreationCodePath));
+          }
+        } catch {}
+      }
+    }
+  }
+
   private resolveRuntime(required: boolean): { igorPath: string; runtimePath: string } | undefined {
     return resolveIgorRuntime(this.config, required);
   }

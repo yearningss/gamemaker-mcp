@@ -1402,6 +1402,136 @@ function Inventory(max_slots) constructor {
 
     return functionDeclarations.filter((d) => (functionReferences.get(d.functionName) ?? 0) === 0);
   }
+
+  initTestFramework(): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const name = "scr_test_framework";
+    const existing = this.resources().find((r) => r.name === name && r.kind === "script");
+    if (existing) {
+      return { name, path: existing.path, status: "already_exists" };
+    }
+
+    const code = `// GML Unit Testing Framework
+global.__tests = [];
+global.__test_results = { passed: 0, failed: 0 };
+
+function test_add(name, test_func) {
+    array_push(global.__tests, { name: name, func: test_func });
+}
+
+function assert_equal(a, b, msg="") {
+    if (a != b) {
+        throw ("Assertion Failed: " + string(a) + " != " + string(b) + (msg != "" ? " (" + msg + ")" : ""));
+    }
+}
+
+function assert_true(val, msg="") {
+    if (!val) {
+        throw ("Assertion Failed: expected true, got false" + (msg != "" ? " (" + msg + ")" : ""));
+    }
+}
+
+function run_all_tests() {
+    show_debug_message("=== GML TEST RUN START ===");
+    
+    // [[SUITES]]
+    
+    for (var i = 0; i < array_length(global.__tests); i++) {
+        var t = global.__tests[i];
+        try {
+            t.func();
+            global.__test_results.passed++;
+            show_debug_message("[PASS] " + t.name);
+        } catch(e) {
+            global.__test_results.failed++;
+            show_debug_message("[FAIL] " + t.name + " - " + string(e));
+        }
+    }
+    show_debug_message("=== GML TEST RUN END ===");
+    show_debug_message("PASSED: " + string(global.__test_results.passed));
+    show_debug_message("FAILED: " + string(global.__test_results.failed));
+    game_end();
+}
+`;
+    return this.createScript(name, code, "Scripts");
+  }
+
+  createTestSuite(options: { suiteName: string }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const name = safeResourceName(`scr_test_${options.suiteName}`);
+    if (this.resources().some((r) => r.name === name)) {
+      throw new Error(`Test suite already exists: ${name}`);
+    }
+
+    const code = `// Test suite for ${options.suiteName}
+function test_suite_${options.suiteName}() {
+    test_add("${options.suiteName} Example Test", function() {
+        var val = 1 + 1;
+        assert_equal(val, 2, "1 + 1 should equal 2");
+    });
+}
+`;
+    const res = this.createScript(name, code, "Scripts");
+
+    // Register inside scr_test_framework
+    const frameworkName = "scr_test_framework";
+    const frameworkRes = this.findResource(frameworkName, "script");
+    const scriptFile = `scripts/${frameworkName}/${frameworkName}.gml`;
+    const frameworkCode = this.sandbox.readText(scriptFile, [".gml"]);
+    if (frameworkCode.includes(`test_suite_${options.suiteName}();`)) {
+      return res;
+    }
+
+    const updatedCode = frameworkCode.replace(
+      "// [[SUITES]]",
+      `test_suite_${options.suiteName}();\n    // [[SUITES]]`
+    );
+    const currentSha = this.sandbox.sha256For(scriptFile);
+    this.sandbox.atomicWrite(scriptFile, updatedCode, { expectedSha256: currentSha });
+
+    return res;
+  }
+
+  setupTestRunner(): TestRunnerSetup {
+    this.sandbox.assertWritable();
+    const yyp = this.projectData();
+    const roomOrder = (yyp["RoomOrderNodes"] as Array<{ roomId: { name: string } }> | undefined) ?? [];
+    const firstRoomName = roomOrder[0]?.roomId?.name ?? this.resources().find((r) => r.kind === "room")?.name;
+    if (!firstRoomName) {
+      throw new Error("No rooms found in the project. Cannot run tests.");
+    }
+
+    const roomResource = this.findResource(firstRoomName, "room");
+    const roomText = this.sandbox.readText(roomResource.path, [".yy"]);
+    const roomData = requireGmJson<Record<string, unknown>>(roomText, roomResource.path);
+    const creationCodeFile = roomData["creationCodeFile"] as string | undefined;
+
+    if (creationCodeFile) {
+      const codePath = `${path.posix.dirname(roomResource.path)}/${creationCodeFile}`;
+      const originalCode = this.sandbox.readText(codePath, [".gml"]);
+      const codeSha = this.sandbox.sha256For(codePath);
+      this.sandbox.atomicWrite(codePath, `run_all_tests();\n${originalCode}`, { expectedSha256: codeSha });
+      return {
+        targetRoomPath: undefined,
+        originalRoomText: undefined,
+        targetRoomCreationCodePath: codePath,
+        originalCreationCodeText: originalCode,
+      };
+    } else {
+      const updatedRoom = { ...roomData, creationCodeFile: "RoomCreationCode.gml" };
+      const updatedRoomText = stringifyGmJson(updatedRoom);
+      const roomSha = this.sandbox.sha256For(roomResource.path);
+      this.sandbox.atomicWrite(roomResource.path, updatedRoomText, { expectedSha256: roomSha });
+      const codePath = `${path.posix.dirname(roomResource.path)}/RoomCreationCode.gml`;
+      this.sandbox.atomicWrite(codePath, "run_all_tests();\n");
+      return {
+        targetRoomPath: roomResource.path,
+        originalRoomText: roomText,
+        targetRoomCreationCodePath: codePath,
+        originalCreationCodeText: undefined,
+      };
+    }
+  }
 }
 
 export interface SpriteInspection {
@@ -1496,6 +1626,13 @@ export interface EventChain {
   objectName: string;
   eventName: string;
   chain: EventChainLink[];
+}
+
+export interface TestRunnerSetup {
+  targetRoomPath?: string | undefined;
+  originalRoomText?: string | undefined;
+  targetRoomCreationCodePath?: string | undefined;
+  originalCreationCodeText?: string | undefined;
 }
 
 export const supportedEventNames = Object.keys(EVENT_MAP) as SupportedEventName[];

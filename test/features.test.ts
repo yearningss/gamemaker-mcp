@@ -337,6 +337,17 @@ void test("powerhouse tools: sprite, sound, state machine, room layer, rename, a
     assert.ok(deadFunctions.some((f) => f.functionName === "unused_combat_function"));
     assert.ok(!deadFunctions.some((f) => f.functionName === "take_damage"));
 
+    // GML testing framework tests
+    const initTest = project.initTestFramework();
+    assert.equal(initTest.name, "scr_test_framework");
+
+    const suiteTest = project.createTestSuite({ suiteName: "player" });
+    assert.equal(suiteTest.name, "scr_test_player");
+
+    // Room setup test
+    const runnerSetup = project.setupTestRunner();
+    assert.ok(runnerSetup.targetRoomPath || runnerSetup.targetRoomCreationCodePath);
+
     const fix = project.autofixProject();
     assert.equal(typeof fix.repaired, "boolean");
   } finally {

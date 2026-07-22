@@ -92,6 +92,9 @@ const EXPECTED_TOOLS = [
   "gm_state_machine_visualize",
   "gm_object_event_chain",
   "gm_gml_dead_code_detect",
+  "gm_test_framework_init",
+  "gm_test_suite_create",
+  "gm_test_runner_run",
 ] as const;
 
 test("stdio MCP exposes the complete extended GameMaker toolset", async () => {
