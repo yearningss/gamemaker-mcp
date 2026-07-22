@@ -604,4 +604,52 @@ export function registerExtendedTools(server: McpServer, project: GameMakerProje
     },
     async (args) => run(() => project.generateInventorySystem(args)),
   );
+
+  server.registerTool(
+    "gm_timeline_create",
+    {
+      title: "Create GameMaker Timeline asset",
+      description: "Create a new GameMaker Timeline asset (.yy metadata) with a list of step moments and GML moment scripts.",
+      inputSchema: {
+        name: z.string().min(1),
+        moments: z.record(z.string(), z.string()).optional().describe("Mapping of step numbers (e.g. '0', '100') to GML moment codes"),
+        folderName: z.string().optional(),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.createTimeline(args)),
+  );
+
+  server.registerTool(
+    "gm_timeline_inspect",
+    {
+      title: "Inspect GameMaker Timeline asset",
+      description: "Inspect a GameMaker Timeline asset and return the list of defined moment step indexes and GML paths.",
+      inputSchema: { name: z.string().min(1) },
+      annotations: READ_ONLY,
+    },
+    async ({ name }) => run(() => project.inspectTimeline(name)),
+  );
+
+  server.registerTool(
+    "gm_macros_list",
+    {
+      title: "Scan and list GML #macro definitions",
+      description: "Scan all scripts and objects for GML #macro definitions and return their names, values, and line locations.",
+      inputSchema: {},
+      annotations: READ_ONLY,
+    },
+    async () => run(() => project.listMacros()),
+  );
+
+  server.registerTool(
+    "gm_state_machine_visualize",
+    {
+      title: "Visualize GML State Machine to Mermaid",
+      description: "Parse a GML file to extract states (enums, cases) and transitions, returning a Mermaid stateDiagram-v2 string.",
+      inputSchema: { path: z.string().min(1).describe("Project-relative path to a GML script or object event file") },
+      annotations: READ_ONLY,
+    },
+    async ({ path }) => run(() => project.visualizeStateMachine(path)),
+  );
 }

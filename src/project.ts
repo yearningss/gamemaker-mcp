@@ -1105,6 +1105,177 @@ function Inventory(max_slots) constructor {
 `;
     return this.createScript(name, code, options.folderName ?? "Scripts");
   }
+
+  createTimeline(options: {
+    name: string;
+    moments?: Record<string, string> | undefined;
+    folderName?: string | undefined;
+  }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const name = safeResourceName(options.name);
+    if (this.resources().some((resource) => resource.name === name)) {
+      throw new Error(`Resource already exists: ${name}`);
+    }
+    const folderName = safeResourceName(options.folderName ?? "Timelines");
+    const folderPath = `folders/${folderName}.yy`;
+    const yyPath = `timelines/${name}/${name}.yy`;
+    this.ensureFolder(folderName, folderPath);
+
+    const moments = Object.entries(options.moments ?? {}).map(([momentStr, code]) => {
+      const moment = parseInt(momentStr, 10);
+      const momentPath = `timelines/${name}/moment_${moment}.gml`;
+      this.sandbox.atomicWrite(momentPath, code);
+      return {
+        $GMTimelineMoment: "",
+        moment,
+        evnt: {
+          $GMEvent: "",
+          "%Name": "",
+          collisionObjectId: null,
+          eventNum: moment,
+          eventType: 0,
+          isDnD: false,
+          name: "",
+          resourceType: "GMEvent",
+          resourceVersion: "2.0",
+        },
+        name: "",
+        resourceType: "GMTimelineMoment",
+        resourceVersion: "2.0",
+      };
+    });
+
+    const timeline = {
+      $GMTimeline: "",
+      "%Name": name,
+      isDnD: false,
+      name,
+      parent: { name: folderName, path: folderPath },
+      resourceType: "GMTimeline",
+      resourceVersion: "2.0",
+      moments,
+    };
+
+    this.sandbox.atomicWrite(yyPath, stringifyGmJson(timeline));
+    this.appendProjectResource(name, yyPath);
+    return { name, kind: "timeline", yyPath, momentsCount: moments.length };
+  }
+
+  inspectTimeline(name: string): TimelineInspection {
+    const resource = this.findResource(name, "timeline");
+    const text = this.sandbox.readText(resource.path, [".yy"]);
+    const data = requireGmJson<Record<string, unknown>>(text, resource.path);
+    const moments = (data["moments"] as Array<Record<string, unknown>> | undefined) ?? [];
+    return {
+      name,
+      path: resource.path,
+      momentsCount: moments.length,
+      moments: moments.map((m) => {
+        const momentNum = Number(m["moment"] ?? 0);
+        return {
+          moment: momentNum,
+          path: `timelines/${name}/moment_${momentNum}.gml`,
+        };
+      }),
+    };
+  }
+
+  listMacros(): MacroInfo[] {
+    const macros: MacroInfo[] = [];
+    const files = this.resources()
+      .filter((r) => r.kind === "script" || r.kind === "object")
+      .flatMap((r) => {
+        const asset = this.readAsset(r.name, r.kind);
+        return asset.files.filter((f) => f.path.endsWith(".gml"));
+      });
+
+    const macroRegex = /^\s*#macro\s+([A-Za-z_][A-Za-z0-9_]*)\s+(.+)$/gm;
+
+    for (const file of files) {
+      const lines = file.content.split(/\r?\n/);
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i]!;
+        let match: RegExpExecArray | null;
+        macroRegex.lastIndex = 0;
+        if ((match = macroRegex.exec(line)) !== null) {
+          const name = match[1] ?? "";
+          const value = (match[2] ?? "").trim();
+          macros.push({
+            name,
+            value,
+            file: file.path,
+            line: i + 1,
+          });
+        }
+      }
+    }
+    return macros;
+  }
+
+  visualizeStateMachine(filePath: string): StateMachineVisualization {
+    const resolvedPath = this.sandbox.resolve(filePath, { mustExist: true });
+    const content = fs.readFileSync(resolvedPath, "utf8");
+    const lines = content.split(/\r?\n/);
+
+    const statesSet = new Set<string>();
+    const transitions: Array<{ from: string; to: string; trigger?: string }> = [];
+
+    const enumRegex = /enum\s+([A-Za-z_][A-Za-z0-9_]*)\s*\{([^}]*)\}/gs;
+    let match: RegExpExecArray | null;
+    while ((match = enumRegex.exec(content)) !== null) {
+      const values = (match[2] ?? "").split(",").map((s) => s.trim().split("=")[0]?.trim()).filter(Boolean);
+      for (const val of values) if (val) statesSet.add(val);
+    }
+
+    const caseRegex = /case\s+([A-Za-z0-9_.]+)\s*:/g;
+    while ((match = caseRegex.exec(content)) !== null) {
+      const caseName = (match[1] ?? "").split(".").pop();
+      if (caseName) statesSet.add(caseName);
+    }
+
+    let currentStateContext = "START";
+    const transitionRegex = /\bstate\s*=\s*([A-Za-z0-9_.]+)/g;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]!;
+      const caseMatch = /case\s+([A-Za-z0-9_.]+)\s*:/i.exec(line);
+      if (caseMatch) {
+        currentStateContext = (caseMatch[1] ?? "").split(".").pop() ?? "START";
+      }
+
+      let transMatch: RegExpExecArray | null;
+      transitionRegex.lastIndex = 0;
+      while ((transMatch = transitionRegex.exec(line)) !== null) {
+        const destState = (transMatch[1] ?? "").split(".").pop() ?? "";
+        if (destState && destState !== currentStateContext) {
+          statesSet.add(destState);
+          if (currentStateContext !== "START") {
+            transitions.push({
+              from: currentStateContext,
+              to: destState,
+              trigger: `Line ${i + 1}`,
+            });
+          }
+        }
+      }
+    }
+
+    const states = [...statesSet];
+    const mermaidLines = ["stateDiagram-v2"];
+    for (const state of states) {
+      mermaidLines.push(`    state ${state}`);
+    }
+    for (const trans of transitions) {
+      mermaidLines.push(`    ${trans.from} --> ${trans.to} : "${trans.trigger}"`);
+    }
+    const mermaid = mermaidLines.join("\n");
+
+    return {
+      states,
+      transitions,
+      mermaid,
+    };
+  }
 }
 
 export interface SpriteInspection {
@@ -1166,6 +1337,26 @@ export interface AnimCurveInspection {
   name: string;
   path: string;
   channels: string[];
+}
+
+export interface TimelineInspection {
+  name: string;
+  path: string;
+  momentsCount: number;
+  moments: Array<{ moment: number; path: string }>;
+}
+
+export interface MacroInfo {
+  name: string;
+  value: string;
+  file: string;
+  line: number;
+}
+
+export interface StateMachineVisualization {
+  states: string[];
+  transitions: Array<{ from: string; to: string; trigger?: string }>;
+  mermaid: string;
 }
 
 export const supportedEventNames = Object.keys(EVENT_MAP) as SupportedEventName[];

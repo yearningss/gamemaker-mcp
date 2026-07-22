@@ -259,6 +259,38 @@ void test("powerhouse tools: sprite, sound, state machine, room layer, rename, a
     const inv = project.generateInventorySystem({ scriptName: "scr_inv" });
     assert.equal(inv.kind, "script");
 
+    // Timeline test
+    const timelineRes = project.createTimeline({
+      name: "tl_spawner",
+      moments: {
+        "0": "show_debug_message('Start'); state = State.RUN;",
+        "100": "show_debug_message('End'); state = State.JUMP;"
+      }
+    });
+    assert.equal(timelineRes.kind, "timeline");
+    const timelineIns = project.inspectTimeline("tl_spawner");
+    assert.equal(timelineIns.momentsCount, 2);
+    assert.equal(timelineIns.moments[0]?.moment, 0);
+
+    // Macros test
+    const macroScript = project.createScript(
+      "scr_config",
+      `#macro GAME_VERSION "1.0.0"\n#macro MAX_PLAYERS 4\n`
+    );
+    const macros = project.listMacros();
+    assert.ok(macros.some((m) => m.name === "GAME_VERSION" && m.value === '"1.0.0"'));
+
+    // State machine visualization test
+    const fsmScript = project.createScript(
+      "scr_fsm_example",
+      `enum State { IDLE, RUN, JUMP }\nfunction update() {\n  switch(state) {\n    case State.IDLE:\n      if (keyboard_check(vk_right)) state = State.RUN;\n      break;\n  }\n}\n`
+    );
+    const scriptPath = `scripts/scr_fsm_example/scr_fsm_example.gml`;
+    const fsmVis = project.visualizeStateMachine(scriptPath);
+    assert.ok(fsmVis.states.includes("IDLE"));
+    assert.ok(fsmVis.states.includes("RUN"));
+    assert.ok(fsmVis.mermaid.includes("stateDiagram-v2"));
+
     const fix = project.autofixProject();
     assert.equal(typeof fix.repaired, "boolean");
   } finally {

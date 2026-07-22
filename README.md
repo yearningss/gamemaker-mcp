@@ -11,15 +11,15 @@ The server uses the stable `@modelcontextprotocol/sdk` v1 line over `stdio`. It 
 
 ## Highlights
 
-- 76 MCP tools, 10 reusable workflow prompts, and 6 project resources;
+- 80 MCP tools, 10 reusable workflow prompts, and 6 project resources;
 - zero-config workspace auto-detection (open any GameMaker project folder in your AI client);
 - CLI installer & manager (`gamemaker-mcp install`, `doctor`, `connect`);
 - tolerant parsing of GameMaker `.yyp`/`.yy` JSON-like files, including trailing commas;
-- project, asset, room, object-event, sprite, sound, sequence, font, tileset, animation curve, and shader inspection;
-- GML symbol/complexity diagnostics, FPS profiler, i18n scanner, draw state auditor, health score (0-100%), object hierarchy tree, doc exporter, and duplicate code finder;
+- project, asset, room, object-event, sprite, sound, sequence, font, tileset, animation curve, timeline, and shader inspection;
+- GML symbol/complexity diagnostics, FPS profiler, i18n scanner, draw state auditor, health score (0-100%), object hierarchy tree, doc exporter, state machine visualizer, and duplicate code finder;
 - preflight GML syntax validator (`gm_gml_validate_snippet`) and Feather JSDoc generator (`gm_gml_docgen`);
 - exact GML patch previews and guarded writes;
-- GameMaker folder, object, script, shader, object-event, room-setting, room instance placement, and room-creation-code operations;
+- GameMaker folder, object, script, shader, object-event, timeline, room-setting, room instance placement, and room-creation-code operations;
 - integrity-checked project snapshots and guarded restoration;
 - GML Finite State Machine, Particle System, GUI layout, and Inventory system boilerplate generators;
 - synchronous compile plus persistent background Igor Compile/PackageZip jobs, status, wait, and cancellation;
@@ -169,7 +169,7 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 | `GAMEMAKER_RUNTIME` | inferred | Runtime directory paired with Igor |
 | `GAMEMAKER_USER_DIR` | auto-detect | GameMaker user/configuration directory |
 
-## Complete Tool Catalog (76 Tools)
+## Complete Tool Catalog (80 Tools)
 
 ### Project & Navigation (10 Tools)
 
@@ -186,7 +186,7 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 | `gm_project_statistics` | Resource, file, line, complexity, shader, and dependency statistics |
 | `gm_project_autofix` | Scan and automatically repair missing YYP references, missing shader files, and corrupted metadata |
 
-### Static Analysis & Quality Audit (13 Tools)
+### Static Analysis & Quality Audit (15 Tools)
 
 | Tool | Purpose |
 |---|---|
@@ -203,6 +203,8 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 | `gm_object_hierarchy` | Build object parent-child inheritance tree with inherited events |
 | `gm_doc_export` | Generate structured Markdown documentation for all project assets |
 | `gm_gml_duplicate_find` | Scan project GML files to detect identical contiguous code blocks across assets |
+| `gm_macros_list` | Scan all scripts and objects to extract and list GML #macro definitions |
+| `gm_state_machine_visualize` | Parse GML code to extract states and transitions, returning a Mermaid stateDiagram-v2 string |
 
 ### GML, Assets & Resources (22 Tools)
 
@@ -244,7 +246,7 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 | `gm_object_event_remove` | Remove a common named event; code deletion is opt-in |
 | `gm_object_event_remove_raw` | Precisely remove any numeric/collision event |
 
-### Rooms, Shaders, Sequences & Curves (11 Tools)
+### Rooms, Shaders, Sequences, Timelines & Curves (13 Tools)
 
 | Tool | Purpose |
 |---|---|
@@ -257,6 +259,8 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 | `gm_shader_inspect` | Stage hashes, uniforms, attributes, varyings, and interface issues |
 | `gm_shader_update` | Guarded per-stage source update with preflight of both hashes |
 | `gm_sequence_inspect` | Inspect Sequence tracks, length, playback speed, and keyframes |
+| `gm_timeline_create` | Create a new GameMaker Timeline asset (.yy metadata) with a list of step moments and GML moment scripts |
+| `gm_timeline_inspect` | Inspect a GameMaker Timeline asset and return the list of defined moment step indexes and GML paths |
 | `gm_anim_curve_create` | Create a new Animation Curve asset with default linear channels |
 | `gm_anim_curve_inspect` | Inspect an Animation Curve asset and return defined animation channel names |
 

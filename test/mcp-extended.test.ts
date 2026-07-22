@@ -85,6 +85,10 @@ const EXPECTED_TOOLS = [
   "gm_particle_system_generate",
   "gm_gui_layout_generate",
   "gm_inventory_system_generate",
+  "gm_timeline_create",
+  "gm_timeline_inspect",
+  "gm_macros_list",
+  "gm_state_machine_visualize",
 ] as const;
 
 test("stdio MCP exposes the complete extended GameMaker toolset", async () => {
