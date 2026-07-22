@@ -315,6 +315,97 @@ export class IgorService {
     }
   }
 
+  async compileDiagnose(options: { timeoutMs?: number | undefined; ignoreCache?: boolean | undefined } = {}): Promise<{
+    ok: boolean;
+    errors: Array<{ file: string; line: number; column: number; message: string }>;
+    warnings: Array<{ file: string; line: number; column: number; message: string }>;
+    stdout: string;
+  }> {
+    const result = await this.compile(options);
+    const errors: Array<{ file: string; line: number; column: number; message: string }> = [];
+    const warnings: Array<{ file: string; line: number; column: number; message: string }> = [];
+
+    const lines = `${result.stdout}\n${result.stderr}`.split(/\r?\n/);
+
+    for (const line of lines) {
+      // Form 1: Temp files matching GML compiler output format
+      // Variation A: "Error : gml_Script_scr_test.gml(42) : message"
+      // Variation B: "gml_Object_obj_player_Step_0.gml(15) : Error : message"
+      const m = /(?:(Error|Warning)\s*:\s*)?(gml_(?:Script|Object|Room)_[A-Za-z0-9_]+)\.gml\((\d+)\)\s*:\s*(?:(Error|Warning)\s*:\s*)?(.+)/i.exec(line);
+      if (m) {
+        const fullAsset = m[2] ?? "";
+        const lineNum = parseInt(m[3] ?? "1", 10);
+        const severity = (m[1] ?? m[4] ?? "Error").toLowerCase();
+        const message = (m[5] ?? "").trim();
+
+        let file = `${fullAsset}.gml`;
+
+        if (fullAsset.startsWith("gml_Script_")) {
+          const scriptName = fullAsset.replace("gml_Script_", "");
+          file = `scripts/${scriptName}/${scriptName}.gml`;
+        } else if (fullAsset.startsWith("gml_Object_")) {
+          const body = fullAsset.replace("gml_Object_", "");
+          const eventMatch = /(.+?)_(Create|Destroy|Alarm|Step|Collision|Draw|KeyPress|KeyRelease|Mouse|Other|CleanUp|PreCreate|Gesture)_(\d+|[A-Za-z0-9_]+)$/i.exec(body);
+          if (eventMatch) {
+            const objName = eventMatch[1] ?? "";
+            const eventName = eventMatch[2] ?? "";
+            const eventNum = eventMatch[3] ?? "";
+            file = `objects/${objName}/${eventName}_${eventNum}.gml`;
+          }
+        }
+
+        const diag = { file, line: lineNum, column: 0, message };
+        if (severity === "warning") {
+          warnings.push(diag);
+        } else {
+          errors.push(diag);
+        }
+      } else {
+        // Form 2: Absolute file paths matching GML format (like C:\Projects\scripts\...)
+        const absMatch = /(?:(Error|Warning)\s*:\s*)?([A-Za-z]:\\[^[(\n\r]+?\.gml)\((\d+)\)\s*:\s*(?:(Error|Warning)\s*:\s*)?(.+)/i.exec(line);
+        if (absMatch) {
+          const absPath = absMatch[2] ?? "";
+          const lineNum = parseInt(absMatch[3] ?? "1", 10);
+          const severity = (absMatch[1] ?? absMatch[4] ?? "Error").toLowerCase();
+          const message = (absMatch[5] ?? "").trim();
+
+          let file = absPath;
+          try {
+            file = path.relative(this.config.projectRoot, absPath).replace(/\\/g, "/");
+          } catch {}
+
+          const diag = { file, line: lineNum, column: 0, message };
+          if (severity === "warning") {
+            warnings.push(diag);
+          } else {
+            errors.push(diag);
+          }
+        } else {
+          // Form 3: General Igor compile warnings/errors
+          const generalMatch = /(?:Error|Warning)\s*:\s*(.+)/i.exec(line);
+          if (generalMatch && !line.includes("0 errors") && !line.includes("0 warnings")) {
+            const msg = (generalMatch[1] ?? "").trim();
+            if (msg && !errors.some(e => e.message === msg) && !warnings.some(w => w.message === msg)) {
+              const diag = { file: "Project", line: 0, column: 0, message: msg };
+              if (line.toLowerCase().includes("warning")) {
+                warnings.push(diag);
+              } else {
+                errors.push(diag);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return {
+      ok: result.ok,
+      errors,
+      warnings,
+      stdout: result.stdout,
+    };
+  }
+
   private resolveRuntime(required: boolean): { igorPath: string; runtimePath: string } | undefined {
     return resolveIgorRuntime(this.config, required);
   }

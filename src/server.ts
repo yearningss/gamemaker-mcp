@@ -173,6 +173,25 @@ export function createServer(config: ServerConfig): McpServer {
   );
 
   server.registerTool(
+    "gm_project_compile_errors",
+    {
+      title: "Compile project and retrieve structured errors",
+      description: "Compile a trusted project and parse Igor output to return a structured list of file, line, and syntax/compilation errors.",
+      inputSchema: {
+        timeoutMs: z.number().int().min(5_000).max(600_000).optional(),
+        ignoreCache: z.boolean().optional(),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    async (args) => run(() => igor.compileDiagnose(args)),
+  );
+
+  server.registerTool(
     "gm_gml_write",
     {
       title: "Write GML safely",

@@ -11,13 +11,13 @@ The server uses the stable `@modelcontextprotocol/sdk` v1 line over `stdio`. It 
 
 ## Highlights
 
-- 80 MCP tools, 10 reusable workflow prompts, and 6 project resources;
+- 81 MCP tools, 10 reusable workflow prompts, and 6 project resources;
 - zero-config workspace auto-detection (open any GameMaker project folder in your AI client);
 - CLI installer & manager (`gamemaker-mcp install`, `doctor`, `connect`);
 - tolerant parsing of GameMaker `.yyp`/`.yy` JSON-like files, including trailing commas;
 - project, asset, room, object-event, sprite, sound, sequence, font, tileset, animation curve, timeline, and shader inspection;
 - GML symbol/complexity diagnostics, FPS profiler, i18n scanner, draw state auditor, health score (0-100%), object hierarchy tree, doc exporter, state machine visualizer, and duplicate code finder;
-- preflight GML syntax validator (`gm_gml_validate_snippet`) and Feather JSDoc generator (`gm_gml_docgen`);
+- preflight GML syntax validator (`gm_gml_validate_snippet`), Igor diagnostic compiler (`gm_project_compile_errors`), and Feather JSDoc generator (`gm_gml_docgen`);
 - exact GML patch previews and guarded writes;
 - GameMaker folder, object, script, shader, object-event, timeline, room-setting, room instance placement, and room-creation-code operations;
 - integrity-checked project snapshots and guarded restoration;
@@ -169,7 +169,7 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 | `GAMEMAKER_RUNTIME` | inferred | Runtime directory paired with Igor |
 | `GAMEMAKER_USER_DIR` | auto-detect | GameMaker user/configuration directory |
 
-## Complete Tool Catalog (80 Tools)
+## Complete Tool Catalog (81 Tools)
 
 ### Project & Navigation (10 Tools)
 
@@ -273,11 +273,12 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 | `gm_snapshot_inspect` | Verify and compare a snapshot |
 | `gm_snapshot_restore` | Restore recorded files with integrity checks and backups |
 
-### Builds & Igor Compiler Jobs (7 Tools)
+### Builds & Igor Compiler Jobs (8 Tools)
 
 | Tool | Purpose |
 |---|---|
 | `gm_compile_sync` | Synchronous Windows VM compile through Igor.exe |
+| `gm_project_compile_errors` | Compile project with Igor and return parsed, structured file/line/message syntax errors |
 | `gm_job_compile_start` | Start persistent background Igor `compile` job |
 | `gm_job_package_zip_start` | Start persistent background Igor `package-zip` job |
 | `gm_job_status` | Read live/persisted job state and artifact information |

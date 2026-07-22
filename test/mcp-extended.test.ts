@@ -23,6 +23,7 @@ const EXPECTED_TOOLS = [
   "gm_symbol_references",
   "gm_dependency_graph",
   "gm_build",
+  "gm_project_compile_errors",
   "gm_job_start",
   "gm_job_list",
   "gm_job_status",

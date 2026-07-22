@@ -16,6 +16,7 @@ import {
   type ProcessControlSpawnOptions,
 } from "../src/jobs.js";
 import type { ServerConfig } from "../src/types.js";
+import { IgorService } from "../src/igor.js";
 import { createFixtureProject } from "./helpers.js";
 
 class FakeChild extends EventEmitter implements JobChildProcess {
@@ -243,3 +244,56 @@ test("persisted job metadata cannot redirect log reads outside the jobs director
 
   assert.throws(() => service.readLog(started.id), /Invalid job paths/);
 });
+
+test("IgorService compileDiagnose parses compiler outputs correctly", async () => {
+  const fixture = createFixtureProject();
+  const igor = new class extends IgorService {
+    override async compile() {
+      return {
+        ok: false,
+        exitCode: 1,
+        timedOut: false,
+        durationMs: 42,
+        outputFile: "game.win",
+        stdout: `
+Error : gml_Script_scr_player_state.gml(42) : variable name not found
+gml_Object_obj_player_Step_0.gml(15) : Error : unexpected token '}'
+C:\\Projects\\MyGame\\scripts\\scr_init\\scr_init.gml(5) : Warning : comparison with undefined
+Error : Compilation Failed
+`,
+        stderr: "",
+        diagnostics: [],
+        command: "Igor.exe",
+        args: [],
+      };
+    }
+  }({
+    projectRoot: fixture.root,
+    projectFile: fixture.projectFile,
+    mode: "workspace-write",
+    allowBuild: true,
+    maxFileBytes: 1024 * 1024,
+  });
+
+  const diag = await igor.compileDiagnose();
+  assert.equal(diag.ok, false);
+  assert.equal(diag.errors.length, 3);
+  assert.equal(diag.warnings.length, 1);
+
+  const scriptError = diag.errors.find((e) => e.file.includes("scr_player_state"));
+  assert.ok(scriptError);
+  assert.equal(scriptError.line, 42);
+  assert.equal(scriptError.message, "variable name not found");
+
+  const objectError = diag.errors.find((e) => e.file.includes("obj_player"));
+  assert.ok(objectError);
+  assert.equal(objectError.file, "objects/obj_player/Step_0.gml");
+  assert.equal(objectError.line, 15);
+  assert.equal(objectError.message, "unexpected token '}'");
+
+  const warning = diag.warnings.find((w) => w.file.includes("scr_init"));
+  assert.ok(warning);
+  assert.equal(warning.line, 5);
+  assert.equal(warning.message, "comparison with undefined");
+});
+
