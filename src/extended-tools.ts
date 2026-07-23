@@ -1119,4 +1119,68 @@ export function registerExtendedTools(server: McpServer, project: GameMakerProje
     },
     async () => run(() => project.findDuplicateAssetContent()),
   );
+
+  server.registerTool(
+    "gm_ide_options_configure",
+    {
+      title: "Configure GameMaker project main options",
+      description: "Configure main project options (game title, Steam AppID, Spine FPS) in options/main/options_main.yy.",
+      inputSchema: {
+        gameTitle: z.string().optional(),
+        steamAppId: z.number().int().optional(),
+        spineFps: z.number().int().optional(),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.configureMainOptions(args)),
+  );
+
+  server.registerTool(
+    "gm_ide_platform_options_configure",
+    {
+      title: "Configure GameMaker platform options",
+      description: "Configure platform options (windows, html5, android, mac, ios) including display name, pixel interpolation, and fullscreen mode.",
+      inputSchema: {
+        platform: z.enum(["windows", "html5", "android", "mac", "ios"]),
+        displayName: z.string().optional(),
+        interpolatePixels: z.boolean().optional(),
+        startFullscreen: z.boolean().optional(),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.configurePlatformOptions(args)),
+  );
+
+  server.registerTool(
+    "gm_ide_layouts_inspect",
+    {
+      title: "Inspect GameMaker IDE editor layout presets",
+      description: "Inspect GameMaker Studio workspace layout presets and window layout configurations.",
+      inputSchema: {},
+      annotations: READ_ONLY,
+    },
+    async () => run(() => project.inspectIdeLayouts()),
+  );
+
+  server.registerTool(
+    "gm_ide_feather_rules_audit",
+    {
+      title: "Audit local Feather diagnostic rules configuration",
+      description: "Read and audit active local Feather rules (.featherconfig) and default IDE severity levels.",
+      inputSchema: {},
+      annotations: READ_ONLY,
+    },
+    async () => run(() => project.auditFeatherRules()),
+  );
+
+  server.registerTool(
+    "gm_ide_project_backup_manager",
+    {
+      title: "Inspect and manage local GameMaker IDE project backups",
+      description: "Inspect local GameMaker Studio auto-saves and backup directories to recover project states.",
+      inputSchema: {},
+      annotations: READ_ONLY,
+    },
+    async () => run(() => project.inspectProjectBackups()),
+  );
 }

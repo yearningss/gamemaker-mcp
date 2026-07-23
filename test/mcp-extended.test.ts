@@ -128,6 +128,11 @@ const EXPECTED_TOOLS = [
   "gm_virtual_folder_assets_list",
   "gm_deep_similarity_scan",
   "gm_asset_duplicate_content_find",
+  "gm_ide_options_configure",
+  "gm_ide_platform_options_configure",
+  "gm_ide_layouts_inspect",
+  "gm_ide_feather_rules_audit",
+  "gm_ide_project_backup_manager",
 ] as const;
 
 test("stdio MCP exposes the complete extended GameMaker toolset", async () => {

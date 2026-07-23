@@ -417,6 +417,13 @@ void test("powerhouse tools: sprite, sound, state machine, room layer, rename, a
     const dupContent = project.findDuplicateAssetContent();
     assert.equal(typeof dupContent.totalIdenticalGroups, "number");
 
+    // IDE Options and Layouts test
+    const fthrAudit = project.auditFeatherRules();
+    assert.equal(typeof fthrAudit.hasCustomFeatherConfig, "boolean");
+
+    const backups = project.inspectProjectBackups();
+    assert.equal(typeof backups.found, "boolean");
+
     const fix = project.autofixProject();
     assert.equal(typeof fix.repaired, "boolean");
   } finally {

@@ -2592,6 +2592,85 @@ void main() {
       identicalContentFiles,
     };
   }
+
+  configureMainOptions(options: { gameTitle?: string | undefined; steamAppId?: number | undefined; spineFps?: number | undefined }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const optPath = "options/main/options_main.yy";
+    const full = path.join(this.config.projectRoot, optPath);
+    if (!fs.existsSync(full)) {
+      return { found: false, optPath, message: "Main options file options/main/options_main.yy not found." };
+    }
+    const text = this.sandbox.readText(optPath, [".yy"]);
+    const data = requireGmJson<Record<string, unknown>>(text, optPath);
+
+    if (options.gameTitle !== undefined) data["option_game_title"] = options.gameTitle;
+    if (options.steamAppId !== undefined) data["option_steam_app_id"] = String(options.steamAppId);
+    if (options.spineFps !== undefined) data["option_spine_fps"] = options.spineFps;
+
+    const sha = this.sandbox.sha256For(optPath);
+    this.sandbox.atomicWrite(optPath, stringifyGmJson(data), { expectedSha256: sha, backup: true });
+
+    return { optPath, updated: true, options: data };
+  }
+
+  configurePlatformOptions(options: { platform: "windows" | "html5" | "android" | "mac" | "ios"; displayName?: string | undefined; interpolatePixels?: boolean | undefined; startFullscreen?: boolean | undefined }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const optPath = `options/${options.platform}/options_${options.platform}.yy`;
+    const full = path.join(this.config.projectRoot, optPath);
+    if (!fs.existsSync(full)) {
+      return { found: false, optPath, message: `Platform options file ${optPath} not found.` };
+    }
+    const text = this.sandbox.readText(optPath, [".yy"]);
+    const data = requireGmJson<Record<string, unknown>>(text, optPath);
+
+    if (options.displayName !== undefined) data[`option_${options.platform}_display_name`] = options.displayName;
+    if (options.interpolatePixels !== undefined) data[`option_${options.platform}_interpolate_pixels`] = options.interpolatePixels;
+    if (options.startFullscreen !== undefined) data[`option_${options.platform}_start_fullscreen`] = options.startFullscreen;
+
+    const sha = this.sandbox.sha256For(optPath);
+    this.sandbox.atomicWrite(optPath, stringifyGmJson(data), { expectedSha256: sha, backup: true });
+
+    return { platform: options.platform, optPath, updated: true, platformOptions: data };
+  }
+
+  inspectIdeLayouts(): Record<string, unknown> {
+    const appData = process.env["APPDATA"] || "";
+    const layoutDir = path.join(appData, "GameMakerStudio2", "Layouts");
+    if (!fs.existsSync(layoutDir)) {
+      return { found: false, layoutDir, message: "GameMaker IDE Layouts directory not found." };
+    }
+    const files = fs.readdirSync(layoutDir).filter((f) => f.endsWith(".json"));
+    return { found: true, layoutDir, layoutsCount: files.length, layoutFiles: files };
+  }
+
+  auditFeatherRules(): Record<string, unknown> {
+    const configPath = ".featherconfig";
+    const full = path.join(this.config.projectRoot, configPath);
+    if (!fs.existsSync(full)) {
+      return { hasCustomFeatherConfig: false, defaultRules: { GM1001: "warn", GM1002: "error", GM2001: "info" } };
+    }
+    const text = fs.readFileSync(full, "utf-8");
+    try {
+      const data = JSON.parse(text);
+      return { hasCustomFeatherConfig: true, configPath, featherConfig: data };
+    } catch {
+      return { hasCustomFeatherConfig: true, configPath, error: "Invalid JSON in .featherconfig" };
+    }
+  }
+
+  inspectProjectBackups(): Record<string, unknown> {
+    const localAppData = process.env["LOCALAPPDATA"] || "";
+    const backupDir = path.join(localAppData, "GameMakerStudio2", "Backups");
+    if (!fs.existsSync(backupDir)) {
+      return { found: false, backupDir, message: "GameMaker Studio local backups directory not found." };
+    }
+    try {
+      const entries = fs.readdirSync(backupDir).filter((e) => e.includes(this.summary().name));
+      return { found: true, backupDir, matchingBackupsCount: entries.length, backups: entries };
+    } catch {
+      return { found: true, backupDir, matchingBackupsCount: 0, backups: [] };
+    }
+  }
 }
 
 export interface SpriteInspection {
