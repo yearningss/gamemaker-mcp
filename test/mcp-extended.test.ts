@@ -126,6 +126,8 @@ const EXPECTED_TOOLS = [
   "gm_project_git_status",
   "gm_folder_compare_symbols",
   "gm_virtual_folder_assets_list",
+  "gm_deep_similarity_scan",
+  "gm_asset_duplicate_content_find",
 ] as const;
 
 test("stdio MCP exposes the complete extended GameMaker toolset", async () => {

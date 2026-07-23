@@ -2437,6 +2437,161 @@ void main() {
       assets: assets.map((a) => ({ name: a.name, kind: a.kind, path: a.path })),
     };
   }
+
+  deepSimilarityScan(options: { folderA?: string | undefined; folderB?: string | undefined } = {}): Record<string, unknown> {
+    const resources = this.resources().filter((r) => {
+      if (options.folderA && options.folderB) {
+        return r.path.includes(options.folderA) || r.path.includes(options.folderB) ||
+               r.name.includes(options.folderA) || r.name.includes(options.folderB);
+      }
+      return true;
+    });
+
+    const functions = new Map<string, string[]>();
+    const variables = new Map<string, string[]>();
+    const enums = new Map<string, string[]>();
+    const macros = new Map<string, string[]>();
+    const strings = new Map<string, string[]>();
+    const shaderUniforms = new Map<string, string[]>();
+
+    for (const res of resources) {
+      try {
+        const asset = this.readAsset(res.name, res.kind);
+        for (const file of asset.files) {
+          if (file.path.endsWith(".gml")) {
+            const content = file.content;
+            const refName = `${res.name} (${file.path})`;
+
+            let m: RegExpExecArray | null;
+            const funcRegex = /\b(function\s+([A-Za-z_][A-Za-z0-9_]*)|static\s+([A-Za-z_][A-Za-z0-9_]*)\s*=)/g;
+            while ((m = funcRegex.exec(content)) !== null) {
+              const name = m[2] || m[3];
+              if (name) {
+                if (!functions.has(name)) functions.set(name, []);
+                functions.get(name)!.push(refName);
+              }
+            }
+
+            const varRegex = /\b(global|self)\.([A-Za-z_][A-Za-z0-9_]*)\b/g;
+            while ((m = varRegex.exec(content)) !== null) {
+              const v = m[2];
+              if (v) {
+                if (!variables.has(v)) variables.set(v, []);
+                variables.get(v)!.push(refName);
+              }
+            }
+
+            const enumRegex = /\benum\s+([A-Za-z_][A-Za-z0-9_]*)\b/g;
+            while ((m = enumRegex.exec(content)) !== null) {
+              const e = m[1];
+              if (e) {
+                if (!enums.has(e)) enums.set(e, []);
+                enums.get(e)!.push(refName);
+              }
+            }
+
+            const macroRegex = /#macro\s+([A-Za-z_][A-Za-z0-9_]*)\b/g;
+            while ((m = macroRegex.exec(content)) !== null) {
+              const mac = m[1];
+              if (mac) {
+                if (!macros.has(mac)) macros.set(mac, []);
+                macros.get(mac)!.push(refName);
+              }
+            }
+
+            const strRegex = /"([^"\\]*(\\.[^"\\]*)*)"/g;
+            while ((m = strRegex.exec(content)) !== null) {
+              const s = m[1];
+              if (s && s.length > 3 && !/^[0-9_\-\.\s]+$/.test(s)) {
+                if (!strings.has(s)) strings.set(s, []);
+                strings.get(s)!.push(refName);
+              }
+            }
+          } else if (file.path.endsWith(".vsh") || file.path.endsWith(".fsh")) {
+            const content = file.content;
+            const refName = `${res.name} (${file.path})`;
+            const unifRegex = /uniform\s+[A-Za-z0-9_]+\s+([A-Za-z_][A-Za-z0-9_]*)/g;
+            let m: RegExpExecArray | null;
+            while ((m = unifRegex.exec(content)) !== null) {
+              const u = m[1];
+              if (u) {
+                if (!shaderUniforms.has(u)) shaderUniforms.set(u, []);
+                shaderUniforms.get(u)!.push(refName);
+              }
+            }
+          }
+        }
+      } catch {}
+    }
+
+    const filterDuplicates = (map: Map<string, string[]>) => {
+      const result: Record<string, string[]> = {};
+      for (const [key, refs] of map.entries()) {
+        const uniqueRefs = Array.from(new Set(refs));
+        if (uniqueRefs.length > 1) {
+          result[key] = uniqueRefs;
+        }
+      }
+      return result;
+    };
+
+    const duplicateFunctions = filterDuplicates(functions);
+    const duplicateVariables = filterDuplicates(variables);
+    const duplicateEnums = filterDuplicates(enums);
+    const duplicateMacros = filterDuplicates(macros);
+    const duplicateStrings = filterDuplicates(strings);
+    const duplicateUniforms = filterDuplicates(shaderUniforms);
+
+    return {
+      scope: options.folderA && options.folderB ? `Comparing '${options.folderA}' vs '${options.folderB}'` : "Project-wide everything match",
+      summary: {
+        sharedFunctions: Object.keys(duplicateFunctions).length,
+        sharedVariables: Object.keys(duplicateVariables).length,
+        sharedEnums: Object.keys(duplicateEnums).length,
+        sharedMacros: Object.keys(duplicateMacros).length,
+        sharedStringLiterals: Object.keys(duplicateStrings).length,
+        sharedShaderUniforms: Object.keys(duplicateUniforms).length,
+      },
+      duplicateFunctions,
+      duplicateVariables,
+      duplicateEnums,
+      duplicateMacros,
+      duplicateStrings,
+      duplicateUniforms,
+    };
+  }
+
+  findDuplicateAssetContent(): Record<string, unknown> {
+    const fileHashes = new Map<string, string[]>();
+
+    const files = walkFiles(this.config.projectRoot)
+      .map((p) => this.sandbox.relative(p))
+      .filter((p) => p.endsWith(".png") || p.endsWith(".wav") || p.endsWith(".ogg") || p.endsWith(".json") || p.endsWith(".gml"));
+
+    for (const file of files) {
+      try {
+        const sha = this.sandbox.sha256For(file);
+        if (!fileHashes.has(sha)) fileHashes.set(sha, []);
+        fileHashes.get(sha)!.push(file);
+      } catch {}
+    }
+
+    const identicalContentFiles: Record<string, string[]> = {};
+    let totalDuplicates = 0;
+
+    for (const [sha, list] of fileHashes.entries()) {
+      if (list.length > 1) {
+        identicalContentFiles[sha.substring(0, 8)] = list;
+        totalDuplicates += list.length - 1;
+      }
+    }
+
+    return {
+      totalIdenticalGroups: Object.keys(identicalContentFiles).length,
+      totalDuplicateFiles: totalDuplicates,
+      identicalContentFiles,
+    };
+  }
 }
 
 export interface SpriteInspection {

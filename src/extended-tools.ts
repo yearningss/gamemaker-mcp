@@ -1094,4 +1094,29 @@ export function registerExtendedTools(server: McpServer, project: GameMakerProje
     },
     async (args) => run(() => project.listVirtualFolderAssets(args)),
   );
+
+  server.registerTool(
+    "gm_deep_similarity_scan",
+    {
+      title: "Deep comprehensive similarity & duplicate spectrum scanner",
+      description: "Perform an exhaustive deep scan across virtual folders or the entire project to find repeating functions, variables, enums, macros, string literals, and shader uniforms.",
+      inputSchema: {
+        folderA: z.string().optional(),
+        folderB: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.deepSimilarityScan(args)),
+  );
+
+  server.registerTool(
+    "gm_asset_duplicate_content_find",
+    {
+      title: "Find identical asset files by content SHA-256 hash",
+      description: "Scan all project asset files (PNG sprites, WAV/OGG audio, JSON data, GML code) to detect byte-identical duplicate files.",
+      inputSchema: {},
+      annotations: READ_ONLY,
+    },
+    async () => run(() => project.findDuplicateAssetContent()),
+  );
 }

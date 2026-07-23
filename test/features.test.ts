@@ -410,6 +410,13 @@ void test("powerhouse tools: sprite, sound, state machine, room layer, rename, a
     const vfList = project.listVirtualFolderAssets({ folderNameOrPath: "Scripts" });
     assert.equal(typeof vfList.totalAssets, "number");
 
+    // Deep similarity and content duplicates test
+    const deepSim = project.deepSimilarityScan();
+    assert.equal(typeof deepSim.scope, "string");
+
+    const dupContent = project.findDuplicateAssetContent();
+    assert.equal(typeof dupContent.totalIdenticalGroups, "number");
+
     const fix = project.autofixProject();
     assert.equal(typeof fix.repaired, "boolean");
   } finally {
