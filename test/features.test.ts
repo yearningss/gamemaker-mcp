@@ -396,6 +396,13 @@ void test("powerhouse tools: sprite, sound, state machine, room layer, rename, a
     const rec = project.getRecentProjects();
     assert.equal(typeof rec.totalRecent, "number");
 
+    // Utilities test
+    const bsr = project.batchSearchReplace({ query: "player_score", replacement: "score_val", dryRun: true });
+    assert.equal(typeof bsr.modifiedFiles, "number");
+
+    const gitSt = project.inspectProjectGitStatus();
+    assert.equal(typeof gitSt.isGitRepository, "boolean");
+
     const fix = project.autofixProject();
     assert.equal(typeof fix.repaired, "boolean");
   } finally {

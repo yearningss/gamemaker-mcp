@@ -2206,6 +2206,133 @@ void main() {
       return { found: false, error: e.message };
     }
   }
+
+  formatGmlCode(options: { filePath: string; indentSize?: number | undefined }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const content = this.sandbox.readText(options.filePath, [".gml"]);
+    const indent = " ".repeat(options.indentSize ?? 4);
+    const lines = content.split(/\r?\n/);
+    let depth = 0;
+    const formatted: string[] = [];
+
+    for (const rawLine of lines) {
+      const trimmed = rawLine.trim();
+      if (!trimmed) {
+        formatted.push("");
+        continue;
+      }
+
+      if (trimmed.startsWith("}") || trimmed.startsWith("]") || trimmed.startsWith(")")) {
+        depth = Math.max(0, depth - 1);
+      }
+
+      formatted.push(indent.repeat(depth) + trimmed);
+
+      const openBraces = (trimmed.match(/[\{\[\(]/g) || []).length;
+      const closeBraces = (trimmed.match(/[\}\]\)]/g) || []).length;
+      depth = Math.max(0, depth + openBraces - closeBraces);
+    }
+
+    const newCode = formatted.join("\n");
+    const sha = this.sandbox.sha256For(options.filePath);
+    this.sandbox.atomicWrite(options.filePath, newCode, { expectedSha256: sha, backup: true });
+
+    return { filePath: options.filePath, linesTotal: lines.length, formatted: true };
+  }
+
+  batchSearchReplace(options: { query: string; replacement: string; isRegex?: boolean | undefined; dryRun?: boolean | undefined }): Record<string, unknown> {
+    if (!options.dryRun) this.sandbox.assertWritable();
+
+    const files = walkFiles(this.config.projectRoot)
+      .map((p) => this.sandbox.relative(p))
+      .filter((p) => p.endsWith(".gml"));
+
+    let modifiedFiles = 0;
+    let totalReplacements = 0;
+    const details: Array<{ file: string; matches: number }> = [];
+
+    const regex = options.isRegex
+      ? new RegExp(options.query, "g")
+      : new RegExp(options.query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g");
+
+    for (const file of files) {
+      const content = this.sandbox.readText(file, [".gml"]);
+      const matches = (content.match(regex) || []).length;
+      if (matches > 0) {
+        modifiedFiles++;
+        totalReplacements += matches;
+        details.push({ file, matches });
+
+        if (!options.dryRun) {
+          const newContent = content.replace(regex, options.replacement);
+          const sha = this.sandbox.sha256For(file);
+          this.sandbox.atomicWrite(file, newContent, { expectedSha256: sha, backup: true });
+        }
+      }
+    }
+
+    return {
+      query: options.query,
+      replacement: options.replacement,
+      dryRun: options.dryRun ?? false,
+      modifiedFiles,
+      totalReplacements,
+      details,
+    };
+  }
+
+  configureSequence(options: { sequenceName: string; width?: number | undefined; height?: number | undefined; length?: number | undefined }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const res = this.findResource(options.sequenceName, "sequence");
+    const text = this.sandbox.readText(res.path, [".yy"]);
+    const data = requireGmJson<Record<string, unknown>>(text, res.path);
+
+    if (options.width !== undefined) data["width"] = options.width;
+    if (options.height !== undefined) data["height"] = options.height;
+    if (options.length !== undefined) data["length"] = options.length;
+
+    const sha = this.sandbox.sha256For(res.path);
+    this.sandbox.atomicWrite(res.path, stringifyGmJson(data), { expectedSha256: sha, backup: true });
+
+    return { sequenceName: options.sequenceName, updated: true, sequenceData: data };
+  }
+
+  configureTimeline(options: { timelineName: string; addMoment?: number | undefined; momentCode?: string | undefined }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const res = this.findResource(options.timelineName, "timeline");
+    const text = this.sandbox.readText(res.path, [".yy"]);
+    const data = requireGmJson<Record<string, unknown>>(text, res.path);
+
+    const moments = (data["moments"] as Array<Record<string, unknown>>) ?? [];
+    if (options.addMoment !== undefined) {
+      moments.push({
+        moment: options.addMoment,
+        evnt: {
+          eventNum: 0,
+          eventType: 0,
+          isDnD: false,
+        },
+      });
+      data["moments"] = moments;
+    }
+
+    const sha = this.sandbox.sha256For(res.path);
+    this.sandbox.atomicWrite(res.path, stringifyGmJson(data), { expectedSha256: sha, backup: true });
+
+    return { timelineName: options.timelineName, updated: true, totalMoments: moments.length };
+  }
+
+  inspectProjectGitStatus(): Record<string, unknown> {
+    const gitDir = path.join(this.config.projectRoot, ".git");
+    if (!fs.existsSync(gitDir)) {
+      return { isGitRepository: false, message: "Project is not a Git repository." };
+    }
+    return {
+      isGitRepository: true,
+      projectRoot: this.config.projectRoot,
+      message: "Git repository detected. Use gm_file_list or git tools to inspect status.",
+    };
+  }
 }
 
 export interface SpriteInspection {

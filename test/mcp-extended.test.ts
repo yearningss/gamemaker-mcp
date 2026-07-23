@@ -119,6 +119,11 @@ const EXPECTED_TOOLS = [
   "gm_ide_cache_clear",
   "gm_ide_recent_projects",
   "gm_ide_hotkeys_inspect",
+  "gm_gml_format_code",
+  "gm_project_search_replace",
+  "gm_sequence_configure",
+  "gm_timeline_configure",
+  "gm_project_git_status",
 ] as const;
 
 test("stdio MCP exposes the complete extended GameMaker toolset", async () => {

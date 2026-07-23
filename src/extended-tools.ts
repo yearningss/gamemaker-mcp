@@ -996,4 +996,76 @@ export function registerExtendedTools(server: McpServer, project: GameMakerProje
     },
     async () => run(() => project.inspectIdeHotkeys()),
   );
+
+  server.registerTool(
+    "gm_gml_format_code",
+    {
+      title: "Format and pretty-print GML code file",
+      description: "Format GML source file with standard 4-space indentation and clean bracket structure.",
+      inputSchema: {
+        filePath: z.string().min(1),
+        indentSize: z.number().int().min(1).max(8).optional(),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.formatGmlCode(args)),
+  );
+
+  server.registerTool(
+    "gm_project_search_replace",
+    {
+      title: "Batch search and replace across project GML files",
+      description: "Safely execute project-wide literal or regex search & replace across all .gml files with preview mode.",
+      inputSchema: {
+        query: z.string().min(1),
+        replacement: z.string(),
+        isRegex: z.boolean().optional(),
+        dryRun: z.boolean().optional(),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.batchSearchReplace(args)),
+  );
+
+  server.registerTool(
+    "gm_sequence_configure",
+    {
+      title: "Configure GameMaker Sequence asset",
+      description: "Configure canvas width, height, or playback length of a Sequence asset.",
+      inputSchema: {
+        sequenceName: z.string().min(1),
+        width: z.number().optional(),
+        height: z.number().optional(),
+        length: z.number().optional(),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.configureSequence(args)),
+  );
+
+  server.registerTool(
+    "gm_timeline_configure",
+    {
+      title: "Configure GameMaker Timeline asset",
+      description: "Configure timeline moments or add a new step moment event to a Timeline asset.",
+      inputSchema: {
+        timelineName: z.string().min(1),
+        addMoment: z.number().int().optional(),
+        momentCode: z.string().optional(),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.configureTimeline(args)),
+  );
+
+  server.registerTool(
+    "gm_project_git_status",
+    {
+      title: "Inspect project Git repository status",
+      description: "Check if the GameMaker project directory is a Git repository and inspect repository details.",
+      inputSchema: {},
+      annotations: READ_ONLY,
+    },
+    async () => run(() => project.inspectProjectGitStatus()),
+  );
 }
