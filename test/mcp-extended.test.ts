@@ -95,6 +95,20 @@ const EXPECTED_TOOLS = [
   "gm_test_framework_init",
   "gm_test_suite_create",
   "gm_test_runner_run",
+  "gm_datafile_list",
+  "gm_datafile_create",
+  "gm_datafile_read",
+  "gm_audio_group_list",
+  "gm_texture_group_list",
+  "gm_sound_configure",
+  "gm_room_layer_remove",
+  "gm_room_instance_remove",
+  "gm_room_instance_configure",
+  "gm_gml_globalvars_list",
+  "gm_font_configure",
+  "gm_tileset_configure",
+  "gm_physics_audit",
+  "gm_asset_find_references",
 ] as const;
 
 test("stdio MCP exposes the complete extended GameMaker toolset", async () => {

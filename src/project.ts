@@ -1532,6 +1532,357 @@ function test_suite_${options.suiteName}() {
       };
     }
   }
+
+  listDataFiles(): Array<Record<string, unknown>> {
+    const yyp = this.projectData() as Record<string, unknown>;
+    const included = (yyp["IncludedFiles"] as Array<Record<string, unknown>> | undefined) ?? [];
+    return included.map((file) => {
+      const fileName = (file["name"] ?? file["%Name"] ?? "") as string;
+      const relPath = `datafiles/${fileName}`;
+      return {
+        name: fileName,
+        filePath: file["filePath"] ?? "datafiles",
+        fullPath: relPath,
+        exists: fs.existsSync(this.sandbox.resolve(relPath, { mustExist: false })),
+      };
+    });
+  }
+
+  createDataFile(options: { filePath: string; content: string }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const cleanName = path.posix.basename(options.filePath);
+    const relativePath = options.filePath.startsWith("datafiles/")
+      ? options.filePath
+      : `datafiles/${options.filePath}`;
+
+    const writeResult = this.sandbox.atomicWrite(relativePath, options.content);
+
+    const yypText = this.sandbox.readText(this.projectRelativePath, [".yyp"]);
+    const yyp = requireGmJson<YypData & { IncludedFiles?: Array<Record<string, unknown>> }>(
+      yypText,
+      this.projectRelativePath,
+    );
+    const includedFiles = [...(yyp.IncludedFiles ?? [])];
+
+    if (!includedFiles.some((f) => (f["name"] ?? f["%Name"]) === cleanName)) {
+      includedFiles.push({
+        $GMIncludedFile: "",
+        "%Name": cleanName,
+        CopyToMask: -1,
+        filePath: "datafiles",
+        name: cleanName,
+        resourceType: "GMIncludedFile",
+        resourceVersion: "2.0",
+      });
+      const updatedYypText = updateJsonPath(yypText, ["IncludedFiles"], includedFiles);
+      const yypSha = this.sandbox.sha256For(this.projectRelativePath);
+      this.sandbox.atomicWrite(this.projectRelativePath, updatedYypText, { expectedSha256: yypSha });
+    }
+
+    return { name: cleanName, path: relativePath, bytes: options.content.length, writeResult };
+  }
+
+  readDataFile(filePath: string): Record<string, unknown> {
+    const relativePath = filePath.startsWith("datafiles/") ? filePath : `datafiles/${filePath}`;
+    return this.readFile(relativePath);
+  }
+
+  listAudioGroups(): Record<string, unknown> {
+    const yyp = this.projectData() as Record<string, unknown>;
+    const audioGroups = (yyp["AudioGroups"] as Array<Record<string, unknown>> | undefined) ?? [];
+    const sounds = this.resources().filter((r) => r.kind === "sound");
+
+    const result: Array<{ name: string; targets: string[] }> = audioGroups.map((group) => {
+      const groupName = (group["name"] ?? group["%Name"] ?? "audiogroup_default") as string;
+      return {
+        name: groupName,
+        targets: [],
+      };
+    });
+    if (!result.some((g) => g.name === "audiogroup_default")) {
+      result.unshift({ name: "audiogroup_default", targets: [] });
+    }
+
+    for (const soundRes of sounds) {
+      try {
+        const text = this.sandbox.readText(soundRes.path, [".yy"]);
+        const data = requireGmJson<Record<string, unknown>>(text, soundRes.path);
+        const group = (data["audioGroupId"] as { name?: string } | undefined)?.name ?? "audiogroup_default";
+        const targetGroup = result.find((g) => g.name === group);
+        if (targetGroup) targetGroup.targets.push(soundRes.name);
+      } catch {}
+    }
+    return { audioGroups: result };
+  }
+
+  listTextureGroups(): Record<string, unknown> {
+    const yyp = this.projectData() as Record<string, unknown>;
+    const textureGroups = (yyp["TextureGroups"] as Array<Record<string, unknown>> | undefined) ?? [];
+    const sprites = this.resources().filter((r) => r.kind === "sprite");
+
+    const result: Array<{ name: string; targets: string[] }> = textureGroups.map((group) => {
+      const groupName = (group["name"] ?? group["%Name"] ?? "Default") as string;
+      return {
+        name: groupName,
+        targets: [],
+      };
+    });
+    if (!result.some((g) => g.name === "Default")) {
+      result.unshift({ name: "Default", targets: [] });
+    }
+
+    for (const spriteRes of sprites) {
+      try {
+        const text = this.sandbox.readText(spriteRes.path, [".yy"]);
+        const data = requireGmJson<Record<string, unknown>>(text, spriteRes.path);
+        const group = (data["textureGroupId"] as { name?: string } | undefined)?.name ?? "Default";
+        const targetGroup = result.find((g) => g.name === group);
+        if (targetGroup) targetGroup.targets.push(spriteRes.name);
+      } catch {}
+    }
+    return { textureGroups: result };
+  }
+
+  configureSound(options: {
+    soundName: string;
+    volume?: number | undefined;
+    preload?: boolean | undefined;
+    audioGroupName?: string | undefined;
+  }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const soundRes = this.findResource(options.soundName, "sound");
+    let text = this.sandbox.readText(soundRes.path, [".yy"]);
+    const updates: Array<[JSONPath, unknown]> = [];
+    if (options.volume !== undefined) updates.push([["volume"], options.volume]);
+    if (options.preload !== undefined) updates.push([["preload"], options.preload]);
+    if (options.audioGroupName !== undefined) {
+      updates.push([["audioGroupId"], { name: options.audioGroupName, path: `audiogroups/${options.audioGroupName}` }]);
+    }
+    if (!updates.length) throw new Error("No sound settings provided");
+    for (const [jsonPath, value] of updates) text = updateJsonPath(text, jsonPath, value);
+    const sha = this.sandbox.sha256For(soundRes.path);
+    return this.sandbox.atomicWrite(soundRes.path, text, { expectedSha256: sha, backup: true });
+  }
+
+  removeRoomLayer(options: { roomName: string; layerName: string }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const resource = this.findResource(options.roomName, "room");
+    const text = this.sandbox.readText(resource.path, [".yy"]);
+    const roomData = requireGmJson<Record<string, unknown>>(text, resource.path);
+    const layers = [...((roomData["layers"] as Array<Record<string, unknown>>) ?? [])];
+    const index = layers.findIndex((l) => (l["name"] ?? l["%Name"]) === options.layerName);
+    if (index < 0) throw new Error(`Layer ${options.layerName} not found in room ${options.roomName}`);
+    layers.splice(index, 1);
+    const next = updateJsonPath(text, ["layers"], layers);
+    const sha = this.sandbox.sha256For(resource.path);
+    return this.sandbox.atomicWrite(resource.path, next, { expectedSha256: sha, backup: true });
+  }
+
+  removeRoomInstance(options: { roomName: string; instanceName: string }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const resource = this.findResource(options.roomName, "room");
+    const text = this.sandbox.readText(resource.path, [".yy"]);
+    const roomData = requireGmJson<Record<string, unknown>>(text, resource.path);
+    const layers = [...((roomData["layers"] as Array<Record<string, unknown>>) ?? [])];
+
+    let removed = false;
+    for (const layer of layers) {
+      const instances = (layer["instances"] as Array<Record<string, unknown>> | undefined) ?? [];
+      const idx = instances.findIndex((inst) => (inst["name"] ?? inst["%Name"]) === options.instanceName);
+      if (idx >= 0) {
+        instances.splice(idx, 1);
+        removed = true;
+        break;
+      }
+    }
+    if (!removed) throw new Error(`Instance ${options.instanceName} not found in room ${options.roomName}`);
+    const next = updateJsonPath(text, ["layers"], layers);
+    const sha = this.sandbox.sha256For(resource.path);
+    return this.sandbox.atomicWrite(resource.path, next, { expectedSha256: sha, backup: true });
+  }
+
+  configureRoomInstance(options: {
+    roomName: string;
+    instanceName: string;
+    x?: number | undefined;
+    y?: number | undefined;
+    scaleX?: number | undefined;
+    scaleY?: number | undefined;
+    rotation?: number | undefined;
+  }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const resource = this.findResource(options.roomName, "room");
+    const text = this.sandbox.readText(resource.path, [".yy"]);
+    const roomData = requireGmJson<Record<string, unknown>>(text, resource.path);
+    const layers = [...((roomData["layers"] as Array<Record<string, unknown>>) ?? [])];
+
+    let targetInstance: Record<string, unknown> | null = null;
+    for (const layer of layers) {
+      const instances = (layer["instances"] as Array<Record<string, unknown>> | undefined) ?? [];
+      const inst = instances.find((i) => (i["name"] ?? i["%Name"]) === options.instanceName);
+      if (inst) {
+        targetInstance = inst;
+        break;
+      }
+    }
+    if (!targetInstance) throw new Error(`Instance ${options.instanceName} not found in room ${options.roomName}`);
+    if (options.x !== undefined) targetInstance["x"] = options.x;
+    if (options.y !== undefined) targetInstance["y"] = options.y;
+    if (options.scaleX !== undefined) targetInstance["scaleX"] = options.scaleX;
+    if (options.scaleY !== undefined) targetInstance["scaleY"] = options.scaleY;
+    if (options.rotation !== undefined) targetInstance["rotation"] = options.rotation;
+
+    const next = updateJsonPath(text, ["layers"], layers);
+    const sha = this.sandbox.sha256For(resource.path);
+    return this.sandbox.atomicWrite(resource.path, next, { expectedSha256: sha, backup: true });
+  }
+
+  listGlobalVars(): Record<string, unknown> {
+    const globalVarMap = new Map<string, Array<{ file: string; line: number; type: "read" | "write" }>>();
+    const relativePaths = walkFiles(this.config.projectRoot)
+      .map((absolutePath) => this.sandbox.relative(absolutePath))
+      .filter((relativePath) => relativePath.toLowerCase().endsWith(".gml"));
+
+    const globalRegex = /\bglobal\.([A-Za-z0-9_]+)\b/g;
+
+    for (const filePath of relativePaths) {
+      const content = this.sandbox.readText(filePath, [".gml"]);
+      const lines = content.split(/\r?\n/);
+
+      lines.forEach((line, idx) => {
+        let match: RegExpExecArray | null;
+        globalRegex.lastIndex = 0;
+        while ((match = globalRegex.exec(line)) !== null) {
+          const varName = match[1];
+          if (!varName) continue;
+          if (!globalVarMap.has(varName)) globalVarMap.set(varName, []);
+
+          const afterMatch = line.substring(match.index + match[0].length).trim();
+          const isWrite = /^=\s*[^=]/.test(afterMatch) || /^\+=\s*/.test(afterMatch) || /^--|^\+\+/.test(afterMatch);
+
+          globalVarMap.get(varName)!.push({
+            file: filePath,
+            line: idx + 1,
+            type: isWrite ? "write" : "read",
+          });
+        }
+      });
+    }
+
+    const variables = [...globalVarMap.entries()].map(([name, references]) => ({
+      name,
+      totalReferences: references.length,
+      writesCount: references.filter((r) => r.type === "write").length,
+      readsCount: references.filter((r) => r.type === "read").length,
+      references,
+    }));
+
+    return { totalGlobalVars: variables.length, variables };
+  }
+
+  configureFont(options: {
+    fontName: string;
+    fontFamily?: string | undefined;
+    size?: number | undefined;
+    bold?: boolean | undefined;
+    italic?: boolean | undefined;
+  }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const res = this.findResource(options.fontName, "font");
+    let text = this.sandbox.readText(res.path, [".yy"]);
+    const updates: Array<[JSONPath, unknown]> = [];
+    if (options.fontFamily !== undefined) updates.push([["fontName"], options.fontFamily]);
+    if (options.size !== undefined) updates.push([["size"], options.size]);
+    if (options.bold !== undefined) updates.push([["bold"], options.bold]);
+    if (options.italic !== undefined) updates.push([["italic"], options.italic]);
+    if (!updates.length) throw new Error("No font settings provided");
+    for (const [jsonPath, value] of updates) text = updateJsonPath(text, jsonPath, value);
+    const sha = this.sandbox.sha256For(res.path);
+    return this.sandbox.atomicWrite(res.path, text, { expectedSha256: sha, backup: true });
+  }
+
+  configureTileset(options: {
+    tilesetName: string;
+    spriteName?: string | undefined;
+    tileSize?: number | undefined;
+    tileBorder?: number | undefined;
+  }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const res = this.findResource(options.tilesetName, "tileset");
+    let text = this.sandbox.readText(res.path, [".yy"]);
+    const updates: Array<[JSONPath, unknown]> = [];
+    if (options.tileSize !== undefined) {
+      updates.push([["tileWidth"], options.tileSize]);
+      updates.push([["tileHeight"], options.tileSize]);
+    }
+    if (options.tileBorder !== undefined) {
+      updates.push([["tilehBorder"], options.tileBorder]);
+      updates.push([["tilevBorder"], options.tileBorder]);
+    }
+    if (options.spriteName !== undefined) {
+      const spriteRes = this.findResource(options.spriteName, "sprite");
+      updates.push([["spriteId"], { name: spriteRes.name, path: spriteRes.path }]);
+    }
+    if (!updates.length) throw new Error("No tileset settings provided");
+    for (const [jsonPath, value] of updates) text = updateJsonPath(text, jsonPath, value);
+    const sha = this.sandbox.sha256For(res.path);
+    return this.sandbox.atomicWrite(res.path, text, { expectedSha256: sha, backup: true });
+  }
+
+  auditPhysics(): Record<string, unknown> {
+    const objects = this.resources().filter((r) => r.kind === "object");
+    const physicsObjects: Array<Record<string, unknown>> = [];
+
+    for (const objRes of objects) {
+      try {
+        const text = this.sandbox.readText(objRes.path, [".yy"]);
+        const data = requireGmJson<Record<string, unknown>>(text, objRes.path);
+        if (data["physicsObject"] === true) {
+          physicsObjects.push({
+            name: objRes.name,
+            path: objRes.path,
+            density: data["physicsDensity"] ?? 0.5,
+            restitution: data["physicsRestitution"] ?? 0.1,
+            friction: data["physicsFriction"] ?? 0.2,
+            linearDamping: data["physicsLinearDamping"] ?? 0.1,
+            angularDamping: data["physicsAngularDamping"] ?? 0.1,
+            shape: data["physicsShape"] ?? 1,
+            sensor: data["physicsSensor"] ?? false,
+          });
+        }
+      } catch {}
+    }
+
+    return { totalObjects: objects.length, physicsObjectsCount: physicsObjects.length, physicsObjects };
+  }
+
+  findAssetReferences(assetName: string): Record<string, unknown> {
+    const matches: Array<{ file: string; line?: number; type: string }> = [];
+    const targetRegex = new RegExp(`\\b${assetName}\\b`, "g");
+
+    const files = walkFiles(this.config.projectRoot)
+      .map((p) => this.sandbox.relative(p))
+      .filter((p) => p.endsWith(".gml") || p.endsWith(".yy") || p.endsWith(".yyp"));
+
+    for (const file of files) {
+      const content = this.sandbox.readText(file, [".gml", ".yy", ".yyp"]);
+      if (file.endsWith(".gml")) {
+        const lines = content.split(/\r?\n/);
+        lines.forEach((line, idx) => {
+          if (targetRegex.test(line)) {
+            matches.push({ file, line: idx + 1, type: "GML code" });
+          }
+          targetRegex.lastIndex = 0;
+        });
+      } else if (file.endsWith(".yy") || file.endsWith(".yyp")) {
+        if (content.includes(`"${assetName}"`)) {
+          matches.push({ file, type: "Metadata reference" });
+        }
+      }
+    }
+
+    return { assetName, totalMatches: matches.length, matches };
+  }
 }
 
 export interface SpriteInspection {

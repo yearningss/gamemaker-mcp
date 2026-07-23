@@ -677,4 +677,195 @@ export function registerExtendedTools(server: McpServer, project: GameMakerProje
     },
     async () => run(() => project.detectDeadCode()),
   );
+
+  server.registerTool(
+    "gm_datafile_list",
+    {
+      title: "List GameMaker included data files",
+      description: "List included data files registered in .yyp and stored in datafiles/ directory.",
+      inputSchema: {},
+      annotations: READ_ONLY,
+    },
+    async () => run(() => project.listDataFiles()),
+  );
+
+  server.registerTool(
+    "gm_datafile_create",
+    {
+      title: "Create GameMaker included data file",
+      description: "Create an included data file in datafiles/ and register its GMIncludedFile entry in .yyp.",
+      inputSchema: {
+        filePath: z.string().min(1),
+        content: z.string(),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.createDataFile(args)),
+  );
+
+  server.registerTool(
+    "gm_datafile_read",
+    {
+      title: "Read GameMaker included data file",
+      description: "Read text content of an included data file in datafiles/.",
+      inputSchema: {
+        filePath: z.string().min(1),
+      },
+      annotations: READ_ONLY,
+    },
+    async ({ filePath }) => run(() => project.readDataFile(filePath)),
+  );
+
+  server.registerTool(
+    "gm_audio_group_list",
+    {
+      title: "List GameMaker audio groups",
+      description: "List configured audio groups and assigned sound assets in the project.",
+      inputSchema: {},
+      annotations: READ_ONLY,
+    },
+    async () => run(() => project.listAudioGroups()),
+  );
+
+  server.registerTool(
+    "gm_texture_group_list",
+    {
+      title: "List GameMaker texture groups",
+      description: "List configured texture groups and assigned sprite assets in the project.",
+      inputSchema: {},
+      annotations: READ_ONLY,
+    },
+    async () => run(() => project.listTextureGroups()),
+  );
+
+  server.registerTool(
+    "gm_sound_configure",
+    {
+      title: "Configure GameMaker sound asset",
+      description: "Configure volume, preload flag, or audio group assignment of a sound asset.",
+      inputSchema: {
+        soundName: z.string().min(1),
+        volume: z.number().min(0).max(1).optional(),
+        preload: z.boolean().optional(),
+        audioGroupName: z.string().optional(),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.configureSound(args)),
+  );
+
+  server.registerTool(
+    "gm_room_layer_remove",
+    {
+      title: "Remove room layer",
+      description: "Remove a named layer from a room.",
+      inputSchema: {
+        roomName: z.string().min(1),
+        layerName: z.string().min(1),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.removeRoomLayer(args)),
+  );
+
+  server.registerTool(
+    "gm_room_instance_remove",
+    {
+      title: "Remove room instance",
+      description: "Remove an instance from a room by name.",
+      inputSchema: {
+        roomName: z.string().min(1),
+        instanceName: z.string().min(1),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.removeRoomInstance(args)),
+  );
+
+  server.registerTool(
+    "gm_room_instance_configure",
+    {
+      title: "Configure room instance transform",
+      description: "Configure position (X, Y), scale, or rotation of an instance in a room.",
+      inputSchema: {
+        roomName: z.string().min(1),
+        instanceName: z.string().min(1),
+        x: z.number().optional(),
+        y: z.number().optional(),
+        scaleX: z.number().optional(),
+        scaleY: z.number().optional(),
+        rotation: z.number().optional(),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.configureRoomInstance(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_globalvars_list",
+    {
+      title: "List project global variables",
+      description: "Scan GML scripts and objects for global.variable usage and return reads/writes map.",
+      inputSchema: {},
+      annotations: READ_ONLY,
+    },
+    async () => run(() => project.listGlobalVars()),
+  );
+
+  server.registerTool(
+    "gm_font_configure",
+    {
+      title: "Configure GameMaker font asset",
+      description: "Configure font family, size, bold, or italic parameters of a font asset.",
+      inputSchema: {
+        fontName: z.string().min(1),
+        fontFamily: z.string().optional(),
+        size: z.number().optional(),
+        bold: z.boolean().optional(),
+        italic: z.boolean().optional(),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.configureFont(args)),
+  );
+
+  server.registerTool(
+    "gm_tileset_configure",
+    {
+      title: "Configure GameMaker tile set asset",
+      description: "Configure sprite assignment, tile size, or tile border/spacing of a tile set asset.",
+      inputSchema: {
+        tilesetName: z.string().min(1),
+        spriteName: z.string().optional(),
+        tileSize: z.number().optional(),
+        tileBorder: z.number().optional(),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.configureTileset(args)),
+  );
+
+  server.registerTool(
+    "gm_physics_audit",
+    {
+      title: "Audit GameMaker physics objects",
+      description: "Scan objects to inspect enabled physics mode, shape, density, friction, and restitution parameters.",
+      inputSchema: {},
+      annotations: READ_ONLY,
+    },
+    async () => run(() => project.auditPhysics()),
+  );
+
+  server.registerTool(
+    "gm_asset_find_references",
+    {
+      title: "Find references to a specific asset",
+      description: "Scan project code files (.gml) and asset metadata (.yy/.yyp) for references to a given asset name.",
+      inputSchema: {
+        assetName: z.string().min(1),
+      },
+      annotations: READ_ONLY,
+    },
+    async ({ assetName }) => run(() => project.findAssetReferences(assetName)),
+  );
 }

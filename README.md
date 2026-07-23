@@ -11,15 +11,15 @@ The server uses the stable `@modelcontextprotocol/sdk` v1 line over `stdio`. It 
 
 ## Highlights
 
-- 86 MCP tools, 10 reusable workflow prompts, and 6 project resources;
+- 100 MCP tools, 10 reusable workflow prompts, and 6 project resources;
 - zero-config workspace auto-detection (open any GameMaker project folder in your AI client);
 - CLI installer & manager (`gamemaker-mcp install`, `doctor`, `connect`);
 - tolerant parsing of GameMaker `.yyp`/`.yy` JSON-like files, including trailing commas;
-- project, asset, room, object-event, object-inheritance, sprite, sound, sequence, font, tileset, animation curve, timeline, and shader inspection;
-- GML symbol/complexity diagnostics, FPS profiler, i18n scanner, draw state auditor, health score (0-100%), object hierarchy tree, doc exporter, state machine visualizer, dead GML code detector, and duplicate code finder;
+- project, asset, room, object-event, object-inheritance, sprite, sound, sequence, font, tileset, animation curve, timeline, included data files, audio/texture groups, and shader inspection;
+- GML symbol/complexity diagnostics, FPS profiler, i18n scanner, draw state auditor, health score (0-100%), object hierarchy tree, doc exporter, state machine visualizer, dead GML code detector, global variable scanner, physics auditor, asset cross-referencer, and duplicate code finder;
 - preflight GML syntax validator (`gm_gml_validate_snippet`), Igor diagnostic compiler (`gm_project_compile_errors`), GML Unit Test suite runner (`gm_test_runner_run`), and Feather JSDoc generator (`gm_gml_docgen`);
 - exact GML patch previews and guarded writes;
-- GameMaker folder, object, script, shader, object-event, timeline, test suite, room-setting, room instance placement, and room-creation-code operations;
+- GameMaker folder, object, script, shader, object-event, timeline, test suite, data file, font configuration, tileset configuration, room-setting, room layer, room instance transform, and room-creation-code operations;
 - integrity-checked project snapshots and guarded restoration;
 - GML Finite State Machine, Particle System, GUI layout, and Inventory system boilerplate generators, plus a GML Unit Testing Framework scaffold;
 - synchronous compile/run plus persistent background Igor Compile/PackageZip jobs, status, wait, and cancellation;
@@ -169,7 +169,7 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 | `GAMEMAKER_RUNTIME` | inferred | Runtime directory paired with Igor |
 | `GAMEMAKER_USER_DIR` | auto-detect | GameMaker user/configuration directory |
 
-## Complete Tool Catalog (83 Tools)
+## Complete Tool Catalog (100 Tools)
 
 ### Project & Navigation (10 Tools)
 
@@ -186,7 +186,7 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 | `gm_project_statistics` | Resource, file, line, complexity, shader, and dependency statistics |
 | `gm_project_autofix` | Scan and automatically repair missing YYP references, missing shader files, and corrupted metadata |
 
-### Static Analysis & Quality Audit (16 Tools)
+### Static Analysis & Quality Audit (19 Tools)
 
 | Tool | Purpose |
 |---|---|
@@ -206,8 +206,11 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 | `gm_macros_list` | Scan all scripts and objects to extract and list GML #macro definitions |
 | `gm_state_machine_visualize` | Parse GML code to extract states and transitions, returning a Mermaid stateDiagram-v2 string |
 | `gm_gml_dead_code_detect` | Scan GML scripts and objects to detect declared functions that are never called anywhere in the project |
+| `gm_gml_globalvars_list` | Scan GML scripts and objects for global.variable usages, returning reads/writes breakdown |
+| `gm_physics_audit` | Scan objects to inspect enabled physics mode, shape, density, friction, and restitution parameters |
+| `gm_asset_find_references` | Scan project code files (.gml) and asset metadata (.yy/.yyp) for references to a given asset name |
 
-### GML, Assets & Resources (22 Tools)
+### GML, Assets & Resources (30 Tools)
 
 | Tool | Purpose |
 |---|---|
@@ -219,10 +222,13 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 | `gm_sprite_create` | Create a new GameMaker Sprite asset (`.yy`) with configurable dimensions, origin, and texture group |
 | `gm_sound_inspect` | Inspect sound audio group, compression type, sample rate, bit depth/rate, duration, and volume |
 | `gm_sound_create` | Create a new GameMaker Sound asset (`.yy`) linking sound audio files with compression and volume |
+| `gm_sound_configure` | Configure volume, preload flag, or audio group assignment of a sound asset |
 | `gm_font_create` | Create a new GameMaker Font asset (`.yy` metadata) with font size, bold, and italic parameters |
 | `gm_font_inspect` | Inspect a GameMaker Font asset and return font size, name, bold/italic options |
+| `gm_font_configure` | Configure font family, size, bold, or italic parameters of a font asset |
 | `gm_tileset_create` | Create a new GameMaker Tile Set asset (`.yy` metadata) linked to an existing Sprite |
 | `gm_tileset_inspect` | Inspect a GameMaker Tile Set asset and return tile size, border, and linked sprite |
+| `gm_tileset_configure` | Configure sprite assignment, tile size, or tile border/spacing of a tile set asset |
 | `gm_folder_create` | Create or repair an asset-browser folder/YPP entry |
 | `gm_script_create` | Create script metadata and GML source |
 | `gm_state_machine_generate` | Generate a clean, struct-based GML Finite State Machine controller script (`scr_state_machine`) |
@@ -233,6 +239,11 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 | `gm_note_create` | Create a new GameMaker Note asset (`notes/NoteName/NoteName.txt`) with documentation text |
 | `gm_note_inspect` | Read text documentation content, line count, file paths, and SHA-256 hash of a Note asset |
 | `gm_note_update` | Guardedly update text content of a GameMaker Note asset with SHA-256 concurrency check |
+| `gm_datafile_list` | List included data files registered in .yyp and stored in datafiles/ directory |
+| `gm_datafile_create` | Create an included data file in datafiles/ and register its GMIncludedFile entry in .yyp |
+| `gm_datafile_read` | Read text content of an included data file in datafiles/ |
+| `gm_audio_group_list` | List configured audio groups and assigned sound assets in the project |
+| `gm_texture_group_list` | List configured texture groups and assigned sprite assets in the project |
 
 ### Objects & Events (9 Tools)
 
@@ -248,7 +259,7 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 | `gm_object_event_remove_raw` | Precisely remove any numeric/collision event |
 | `gm_object_event_chain` | Traverse parent hierarchy of an object and return implementing event files, line counts, and paths |
 
-### Rooms, Shaders, Sequences, Timelines & Curves (13 Tools)
+### Rooms, Shaders, Sequences, Timelines & Curves (16 Tools)
 
 | Tool | Purpose |
 |---|---|
@@ -257,6 +268,9 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 | `gm_room_creation_code_upsert` | Guarded room creation-code write/reference update |
 | `gm_room_instance_add` | Place an object instance in a room at coordinates (X, Y) with scale, rotation, and layer selection |
 | `gm_room_layer_add` | Add a new Instance, Background, Tilemap, or Asset layer to a room at specified depth and visibility |
+| `gm_room_layer_remove` | Remove a named layer from a room |
+| `gm_room_instance_remove` | Remove an instance from a room by name |
+| `gm_room_instance_configure` | Configure position (X, Y), scale, or rotation of an instance in a room |
 | `gm_shader_create` | Create shader metadata plus vertex/fragment stages |
 | `gm_shader_inspect` | Stage hashes, uniforms, attributes, varyings, and interface issues |
 | `gm_shader_update` | Guarded per-stage source update with preflight of both hashes |

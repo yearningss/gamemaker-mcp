@@ -348,6 +348,31 @@ void test("powerhouse tools: sprite, sound, state machine, room layer, rename, a
     const runnerSetup = project.setupTestRunner();
     assert.ok(runnerSetup.targetRoomPath || runnerSetup.targetRoomCreationCodePath);
 
+    // Datafiles & Groups tests
+    const df = project.createDataFile({ filePath: "datafiles/config.json", content: '{"v":1}' });
+    assert.equal(df.name, "config.json");
+    const dfl = project.listDataFiles();
+    assert.ok(dfl.some((f) => f.name === "config.json"));
+    const dfr = project.readDataFile("config.json");
+    assert.equal(dfr.content, '{"v":1}');
+
+    const ag = project.listAudioGroups();
+    assert.ok(Array.isArray(ag.audioGroups));
+    const tg = project.listTextureGroups();
+    assert.ok(Array.isArray(tg.textureGroups));
+
+    // Global variables test
+    project.createScript("scr_globals", "global.player_score = 100;\nvar s = global.player_score;");
+    const gvars = project.listGlobalVars();
+    const varsList = gvars.variables as Array<{ name: string }>;
+    assert.ok(varsList.some((v) => v.name === "player_score"));
+
+    // Physics audit and asset references test
+    const pa = project.auditPhysics();
+    assert.equal(typeof pa.totalObjects, "number");
+    const refs = project.findAssetReferences("obj_actor");
+    assert.equal(typeof refs.totalMatches, "number");
+
     const fix = project.autofixProject();
     assert.equal(typeof fix.repaired, "boolean");
   } finally {
