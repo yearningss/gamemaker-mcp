@@ -1497,6 +1497,10 @@ export function validateGmlSnippet(gmlCode: string): GmlSnippetValidationResult 
     if (/\bif\s*\([^=]*[^!=<>]=[^=].*\)/.test(codePart)) {
       warnings.push({ line: lineNum, message: "Possible assignment '=' inside 'if (...)' condition. Use '==' for equality comparison." });
     }
+
+    if (/(self|this)\.[A-Za-z0-9_]+\s*=\s*function\b/.test(codePart)) {
+      warnings.push({ line: lineNum, message: "Non-static method assignment on struct constructor. Use 'static method_name = function(...)' to avoid GC allocation overhead." });
+    }
   }
 
   if (parenDepth !== 0) errors.push({ line: lines.length, message: "Mismatched parentheses count across snippet." });

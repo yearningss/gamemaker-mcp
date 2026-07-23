@@ -193,5 +193,55 @@ export function registerWorkflowPrompts(server: McpServer): void {
         },
       ],
     }),
+  server.registerPrompt(
+    "write-clean-gml-script",
+    {
+      title: "Write clean production GML script",
+      description: "Generate Feather-compliant, memory-optimized GML script with constructors, static methods, and JSDoc.",
+      argsSchema: {
+        scriptName: z.string().min(1),
+        purpose: z.string().min(1),
+      },
+    },
+    async ({ scriptName, purpose }) => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text:
+              `Create a production-grade, Feather-compliant GML script named '${scriptName}' for: ${purpose}. ` +
+              "Follow strict GML 2024+ rules: use struct constructors, declare all methods as 'static' to avoid GC allocations, " +
+              "add complete Feather JSDoc headers (/// @function, /// @param, /// @returns), preflight snippet with gm_gml_validate_snippet, " +
+              "write script using gm_script_create, and validate project structure.",
+          },
+        },
+      ],
+    }),
+  );
+
+  server.registerPrompt(
+    "write-gml-unit-test",
+    {
+      title: "Create GML unit test suite",
+      description: "Generate unit tests for a system using the GML Unit Testing Framework and run them in background.",
+      argsSchema: {
+        systemName: z.string().min(1),
+      },
+    },
+    async ({ systemName }) => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text:
+              `Create a comprehensive unit test suite for system '${systemName}'. ` +
+              "Call gm_test_framework_init first, then call gm_test_suite_create with suiteName='" + systemName + "', " +
+              "add assertion checks (assert_equal, assert_true), run the tests using gm_test_runner_run, and report results.",
+          },
+        },
+      ],
+    }),
   );
 }

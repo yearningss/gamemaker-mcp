@@ -248,15 +248,19 @@ export function registerAnalysisTools(server: McpServer, project: GameMakerProje
           uri: uri.href,
           mimeType: "text/plain",
           text:
-            "GameMaker GML 2024+ Strict Coding Rules:\n" +
-            "1. ALWAYS declare local variables with 'var' keyword.\n" +
+            "GameMaker GML 2024+ Master Coding Standards & Architecture Rules:\n" +
+            "1. ALWAYS declare local variables with 'var' keyword or prefix parameters with underscore (e.g. '_speed').\n" +
             "2. ALWAYS use named function parameters e.g. 'function scr_name(_a, _b) {}'. NEVER use 'argument0' or 'argument[0]'.\n" +
             "3. ALWAYS use strict equality '==' in conditionals (e.g. 'if (x == 5)'), NEVER single '=' inside 'if'.\n" +
             "4. ALWAYS check 'instance_exists(_inst)' or 'sprite_exists(_spr)' before referencing dynamically.\n" +
-            "5. ALWAYS add Feather JSDoc headers ('/// @function', '/// @param', '/// @returns') to script files.\n" +
-            "6. Use modern array functions ('array_push', 'array_length') and struct constructors ('function Person() constructor {}').\n" +
-            "7. ALWAYS preflight snippets with 'gm_gml_validate_snippet' before editing files.\n" +
-            "8. GMRT 0.20+ Compatibility: Avoid GMRT-incompatible features (flexpanel_node_get_measure/set_measure, vertex_buffer_exists, vertex_format_exists, application_surface_is_draw_enabled). Utilize new ImGUI debug watch functions (dbg_slider, dbg_watch) and GM3D APIs for modern 3D scenes.",
+            "5. ALWAYS add Feather JSDoc headers ('/// @function name(_param)', '/// @param {Type} _param', '/// @returns {Type}') to script files.\n" +
+            "6. Use modern GML OOP features: struct constructors ('function Person(_name) constructor {}') and DECLARE METHODS AS STATIC ('static move = function() {}') to prevent GC allocations per instance.\n" +
+            "7. Memory & Garbage Collection: ALWAYS destroy data structures ('ds_list_destroy', 'ds_map_destroy') and free surface handles ('surface_free') in 'CleanUp' or 'Destroy' events.\n" +
+            "8. Performance Optimization: NEVER allocate structs or dynamic arrays inside Step or Draw loops. Pre-allocate arrays using 'array_create(_size)'.\n" +
+            "9. State Management: Prefer struct-based State Machines or Enums over loose string flags for object state control.\n" +
+            "10. Safety: ALWAYS handle null/undefined checks using nullish coalescing ('val ?? default') and optional chaining.\n" +
+            "11. ALWAYS preflight GML code with 'gm_gml_validate_snippet' before applying edits to files.\n" +
+            "12. GMRT 0.20+ Compatibility: Avoid GMRT-incompatible features (flexpanel_node_get_measure/set_measure, vertex_buffer_exists, vertex_format_exists, application_surface_is_draw_enabled). Utilize new ImGUI debug watch functions (dbg_slider, dbg_watch) and GM3D APIs for modern 3D scenes.",
         },
       ],
     }),
