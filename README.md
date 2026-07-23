@@ -11,7 +11,7 @@ The server uses the stable `@modelcontextprotocol/sdk` v1 line over `stdio`. It 
 
 ## Highlights
 
-- 105 MCP tools, 12 reusable workflow prompts, and 6 project resources;
+- 110 MCP tools, 12 reusable workflow prompts, and 6 project resources;
 - zero-config workspace auto-detection (open any GameMaker project folder in your AI client);
 - CLI installer & manager (`gamemaker-mcp install`, `doctor`, `connect`);
 - tolerant parsing of GameMaker `.yyp`/`.yy` JSON-like files, including trailing commas;
@@ -169,7 +169,17 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 | `GAMEMAKER_RUNTIME` | inferred | Runtime directory paired with Igor |
 | `GAMEMAKER_USER_DIR` | auto-detect | GameMaker user/configuration directory |
 
-## Complete Tool Catalog (105 Tools)
+## Complete Tool Catalog (110 Tools)
+
+### IDE Integration & Preferences (5 Tools)
+
+| Tool | Purpose |
+|---|---|
+| `gm_ide_preferences_inspect` | Read user preferences file (preferences.json) from GameMaker Studio user directory |
+| `gm_ide_feather_config` | Create or update .featherconfig in project root to configure strict type checking and warnings |
+| `gm_ide_cache_clear` | Safely remove project .gm_cache directory to fix stale asset compilation issues |
+| `gm_ide_recent_projects` | Read recent_projects.json from GameMaker Studio user directory to list recently opened projects |
+| `gm_ide_hotkeys_inspect` | Read keybindings.json configuration from GameMaker Studio user directory to display IDE hotkeys |
 
 ### Project & Navigation (10 Tools)
 

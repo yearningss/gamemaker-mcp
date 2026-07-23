@@ -2118,6 +2118,94 @@ void main() {
       recommendations,
     };
   }
+
+  inspectIdePreferences(): Record<string, unknown> {
+    const userDir = process.env["GAMEMAKER_USER_DIR"] || path.join(process.env["APPDATA"] || "", "GameMakerStudio2");
+    const prefPath = path.join(userDir, "preferences.json");
+    if (!fs.existsSync(prefPath)) {
+      return { found: false, searchPath: prefPath, message: "GameMaker IDE preferences file not found at default location." };
+    }
+    try {
+      const text = fs.readFileSync(prefPath, "utf-8");
+      const data = requireGmJson<Record<string, unknown>>(text, prefPath);
+      return { found: true, prefPath, preferences: data };
+    } catch (e: any) {
+      return { found: false, prefPath, error: e.message };
+    }
+  }
+
+  configureFeatherRules(options: {
+    enabled?: boolean | undefined;
+    strictTypeChecking?: boolean | undefined;
+    customRules?: Record<string, string> | undefined;
+  } = {}): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const configPath = ".featherconfig";
+    const config = {
+      enabled: options.enabled ?? true,
+      strictTypeChecking: options.strictTypeChecking ?? true,
+      rules: options.customRules ?? {
+        GM1001: "warn",
+        GM1002: "error",
+        GM2001: "info",
+      },
+    };
+    const content = JSON.stringify(config, null, 2);
+    const fullPath = path.join(this.config.projectRoot, configPath);
+    const exists = fs.existsSync(fullPath);
+    const expectedSha = exists ? this.sandbox.sha256For(configPath) : undefined;
+    this.sandbox.atomicWrite(configPath, content, expectedSha ? { expectedSha256: expectedSha } : {});
+
+    return { configPath, config };
+  }
+
+  clearProjectCache(): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const cacheDir = path.join(this.config.projectRoot, ".gm_cache");
+    let cleared = false;
+    if (fs.existsSync(cacheDir)) {
+      fs.rmSync(cacheDir, { recursive: true, force: true });
+      cleared = true;
+    }
+    return { cacheDir, cleared };
+  }
+
+  getRecentProjects(): Record<string, unknown> {
+    const appData = process.env["APPDATA"] || "";
+    const searchDirs = [
+      path.join(appData, "GameMakerStudio2"),
+      path.join(appData, "GameMakerStudio2-LTS"),
+    ];
+
+    const recent: string[] = [];
+    for (const dir of searchDirs) {
+      const file = path.join(dir, "recent_projects.json");
+      if (fs.existsSync(file)) {
+        try {
+          const content = fs.readFileSync(file, "utf-8");
+          const list = parseGmJson<string[]>(content);
+          if (Array.isArray(list)) recent.push(...list);
+        } catch {}
+      }
+    }
+
+    return { totalRecent: recent.length, recentProjects: recent };
+  }
+
+  inspectIdeHotkeys(): Record<string, unknown> {
+    const appData = process.env["APPDATA"] || "";
+    const file = path.join(appData, "GameMakerStudio2", "keybindings.json");
+    if (!fs.existsSync(file)) {
+      return { found: false, searchPath: file, shortcuts: [] };
+    }
+    try {
+      const content = fs.readFileSync(file, "utf-8");
+      const list = parseGmJson<Record<string, unknown>>(content);
+      return { found: true, keybindingsFile: file, shortcuts: list };
+    } catch (e: any) {
+      return { found: false, error: e.message };
+    }
+  }
 }
 
 export interface SpriteInspection {

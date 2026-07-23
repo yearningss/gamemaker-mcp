@@ -383,6 +383,19 @@ void test("powerhouse tools: sprite, sound, state machine, room layer, rename, a
     const archAudit = project.auditArchitecture();
     assert.equal(typeof archAudit.architectureScore, "number");
 
+    // IDE Integration tools test
+    const pref = project.inspectIdePreferences();
+    assert.equal(typeof pref.found, "boolean");
+
+    const fthr = project.configureFeatherRules({ enabled: true });
+    assert.equal(fthr.configPath, ".featherconfig");
+
+    const cacheRes = project.clearProjectCache();
+    assert.equal(typeof cacheRes.cleared, "boolean");
+
+    const rec = project.getRecentProjects();
+    assert.equal(typeof rec.totalRecent, "number");
+
     const fix = project.autofixProject();
     assert.equal(typeof fix.repaired, "boolean");
   } finally {

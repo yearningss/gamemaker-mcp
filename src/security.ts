@@ -88,6 +88,8 @@ export class ProjectSandbox {
   }
 
   assertSafeTextExtension(relativePath: string): void {
+    const base = path.basename(relativePath).toLowerCase();
+    if (base === ".featherconfig") return;
     const ext = path.extname(relativePath).toLowerCase();
     if (!SAFE_TEXT_EXTENSIONS.has(ext)) {
       throw new Error(`Writing ${ext || "extensionless"} files is not allowed`);

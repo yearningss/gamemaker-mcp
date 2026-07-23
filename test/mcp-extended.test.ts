@@ -114,6 +114,11 @@ const EXPECTED_TOOLS = [
   "gm_refactor_extract_script",
   "gm_room_export_json",
   "gm_project_architecture_audit",
+  "gm_ide_preferences_inspect",
+  "gm_ide_feather_config",
+  "gm_ide_cache_clear",
+  "gm_ide_recent_projects",
+  "gm_ide_hotkeys_inspect",
 ] as const;
 
 test("stdio MCP exposes the complete extended GameMaker toolset", async () => {

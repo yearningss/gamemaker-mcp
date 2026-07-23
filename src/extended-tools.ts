@@ -937,4 +937,63 @@ export function registerExtendedTools(server: McpServer, project: GameMakerProje
     },
     async () => run(() => project.auditArchitecture()),
   );
+
+  server.registerTool(
+    "gm_ide_preferences_inspect",
+    {
+      title: "Inspect GameMaker IDE user preferences",
+      description: "Read user preferences file (preferences.json) from GameMaker Studio 2 / LTS user directory.",
+      inputSchema: {},
+      annotations: READ_ONLY,
+    },
+    async () => run(() => project.inspectIdePreferences()),
+  );
+
+  server.registerTool(
+    "gm_ide_feather_config",
+    {
+      title: "Configure GameMaker Feather rules file",
+      description: "Create or update .featherconfig in the project root to configure strict type checking, warnings, and error severities.",
+      inputSchema: {
+        enabled: z.boolean().optional(),
+        strictTypeChecking: z.boolean().optional(),
+        customRules: z.record(z.string(), z.string()).optional(),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.configureFeatherRules(args as any)),
+  );
+
+  server.registerTool(
+    "gm_ide_cache_clear",
+    {
+      title: "Clear project temporary build cache",
+      description: "Safely remove project .gm_cache directory to fix stale asset compilation issues.",
+      inputSchema: {},
+      annotations: PROJECT_WRITE,
+    },
+    async () => run(() => project.clearProjectCache()),
+  );
+
+  server.registerTool(
+    "gm_ide_recent_projects",
+    {
+      title: "List recent projects in GameMaker IDE",
+      description: "Read recent_projects.json from GameMaker Studio user directory to list recently opened projects.",
+      inputSchema: {},
+      annotations: READ_ONLY,
+    },
+    async () => run(() => project.getRecentProjects()),
+  );
+
+  server.registerTool(
+    "gm_ide_hotkeys_inspect",
+    {
+      title: "Inspect GameMaker IDE keyboard shortcuts",
+      description: "Read keybindings.json configuration from GameMaker Studio user directory to display IDE hotkeys.",
+      inputSchema: {},
+      annotations: READ_ONLY,
+    },
+    async () => run(() => project.inspectIdeHotkeys()),
+  );
 }
