@@ -1,6 +1,6 @@
 {
   "name": "gamemaker-mcp",
-  "version": "1.20.0",
+  "version": "1.20.1",
   "description": "A safe, project-aware MCP server for GameMaker Studio",
   "type": "module",
   "bin": {
