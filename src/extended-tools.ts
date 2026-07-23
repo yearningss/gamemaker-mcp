@@ -868,4 +868,73 @@ export function registerExtendedTools(server: McpServer, project: GameMakerProje
     },
     async ({ assetName }) => run(() => project.findAssetReferences(assetName)),
   );
+
+  server.registerTool(
+    "gm_i18n_extract_strings",
+    {
+      title: "Extract hardcoded GML strings for localization",
+      description: "Scan project GML files for hardcoded string literals and generate datafiles/localization.json dictionary.",
+      inputSchema: {
+        targetFile: z.string().optional(),
+        jsonPath: z.string().optional(),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.extractI18nStrings(args)),
+  );
+
+  server.registerTool(
+    "gm_shader_effect_generate",
+    {
+      title: "Generate GLSL ES shader visual effect asset",
+      description: "Generate complete Vertex & Fragment shader assets for popular visual effects (outline, blur, dissolve, chromatic aberration, wave, pixelate).",
+      inputSchema: {
+        shaderName: z.string().min(1),
+        effectType: z.enum(["outline", "blur", "dissolve", "chromatic_aberration", "wave", "pixelate"]),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.generateShaderEffect(args)),
+  );
+
+  server.registerTool(
+    "gm_refactor_extract_script",
+    {
+      title: "Extract code block into reusable script asset",
+      description: "Extract a line range of GML code into a new standalone script asset with Feather JSDoc headers and replace it with a function call.",
+      inputSchema: {
+        sourceFilePath: z.string().min(1),
+        newScriptName: z.string().min(1),
+        startLine: z.number().int().min(1),
+        endLine: z.number().int().min(1),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.extractScriptFromCode(args)),
+  );
+
+  server.registerTool(
+    "gm_room_export_json",
+    {
+      title: "Export room level to portable JSON format",
+      description: "Serialize room settings, layers, instances, and creation code into a portable JSON level format in datafiles/levels/.",
+      inputSchema: {
+        roomName: z.string().min(1),
+        targetPath: z.string().optional(),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.exportRoomToJson(args)),
+  );
+
+  server.registerTool(
+    "gm_project_architecture_audit",
+    {
+      title: "Audit overall project architecture and modularity",
+      description: "Comprehensive architecture audit reporting modularity score (0-100), grade (A+ to F), resource distributions, and design recommendations.",
+      inputSchema: {},
+      annotations: READ_ONLY,
+    },
+    async () => run(() => project.auditArchitecture()),
+  );
 }

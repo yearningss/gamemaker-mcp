@@ -11,7 +11,7 @@ The server uses the stable `@modelcontextprotocol/sdk` v1 line over `stdio`. It 
 
 ## Highlights
 
-- 100 MCP tools, 12 reusable workflow prompts, and 6 project resources;
+- 105 MCP tools, 12 reusable workflow prompts, and 6 project resources;
 - zero-config workspace auto-detection (open any GameMaker project folder in your AI client);
 - CLI installer & manager (`gamemaker-mcp install`, `doctor`, `connect`);
 - tolerant parsing of GameMaker `.yyp`/`.yy` JSON-like files, including trailing commas;
@@ -169,7 +169,7 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 | `GAMEMAKER_RUNTIME` | inferred | Runtime directory paired with Igor |
 | `GAMEMAKER_USER_DIR` | auto-detect | GameMaker user/configuration directory |
 
-## Complete Tool Catalog (100 Tools)
+## Complete Tool Catalog (105 Tools)
 
 ### Project & Navigation (10 Tools)
 
@@ -186,7 +186,7 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 | `gm_project_statistics` | Resource, file, line, complexity, shader, and dependency statistics |
 | `gm_project_autofix` | Scan and automatically repair missing YYP references, missing shader files, and corrupted metadata |
 
-### Static Analysis & Quality Audit (19 Tools)
+### Static Analysis & Quality Audit (21 Tools)
 
 | Tool | Purpose |
 |---|---|
@@ -209,8 +209,10 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 | `gm_gml_globalvars_list` | Scan GML scripts and objects for global.variable usages, returning reads/writes breakdown |
 | `gm_physics_audit` | Scan objects to inspect enabled physics mode, shape, density, friction, and restitution parameters |
 | `gm_asset_find_references` | Scan project code files (.gml) and asset metadata (.yy/.yyp) for references to a given asset name |
+| `gm_i18n_extract_strings` | Scan project GML files for hardcoded string literals and generate datafiles/localization.json dictionary |
+| `gm_project_architecture_audit` | Comprehensive architecture audit reporting modularity score (0-100), grade (A+ to F), and design recommendations |
 
-### GML, Assets & Resources (30 Tools)
+### GML, Assets & Resources (33 Tools)
 
 | Tool | Purpose |
 |---|---|
@@ -244,6 +246,9 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 | `gm_datafile_read` | Read text content of an included data file in datafiles/ |
 | `gm_audio_group_list` | List configured audio groups and assigned sound assets in the project |
 | `gm_texture_group_list` | List configured texture groups and assigned sprite assets in the project |
+| `gm_shader_effect_generate` | Generate complete GLSL ES Vertex & Fragment shader assets for visual effects |
+| `gm_refactor_extract_script` | Extract GML code block into a standalone script asset with Feather JSDoc headers |
+| `gm_room_export_json` | Serialize room settings, layers, instances, and creation code into a portable JSON level format |
 
 ### Objects & Events (9 Tools)
 

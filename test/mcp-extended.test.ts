@@ -109,6 +109,11 @@ const EXPECTED_TOOLS = [
   "gm_tileset_configure",
   "gm_physics_audit",
   "gm_asset_find_references",
+  "gm_i18n_extract_strings",
+  "gm_shader_effect_generate",
+  "gm_refactor_extract_script",
+  "gm_room_export_json",
+  "gm_project_architecture_audit",
 ] as const;
 
 test("stdio MCP exposes the complete extended GameMaker toolset", async () => {

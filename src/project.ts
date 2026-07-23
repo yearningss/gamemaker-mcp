@@ -1883,6 +1883,241 @@ function test_suite_${options.suiteName}() {
 
     return { assetName, totalMatches: matches.length, matches };
   }
+
+  extractI18nStrings(options: {
+    targetFile?: string | undefined;
+    jsonPath?: string | undefined;
+  } = {}): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const destPath = options.jsonPath ?? "datafiles/localization.json";
+    const hardcoded: Array<{ file: string; line: number; text: string; key: string }> = [];
+
+    const files = walkFiles(this.config.projectRoot)
+      .map((p) => this.sandbox.relative(p))
+      .filter((p) => p.endsWith(".gml"));
+
+    const stringRegex = /"([^"\\]*(\\.[^"\\]*)*)"/g;
+
+    for (const file of files) {
+      if (options.targetFile && !file.includes(options.targetFile)) continue;
+      const content = this.sandbox.readText(file, [".gml"]);
+      const lines = content.split(/\r?\n/);
+
+      lines.forEach((line, idx) => {
+        if (line.trim().startsWith("//") || line.trim().startsWith("///")) return;
+        let match: RegExpExecArray | null;
+        stringRegex.lastIndex = 0;
+        while ((match = stringRegex.exec(line)) !== null) {
+          const str = match[1];
+          if (str && str.length > 1 && !/^[0-9_\-\.\s]+$/.test(str)) {
+            const key = `STR_${path.basename(file, ".gml").toUpperCase()}_L${idx + 1}`;
+            hardcoded.push({ file, line: idx + 1, text: str, key });
+          }
+        }
+      });
+    }
+
+    const dict: Record<string, string> = {};
+    for (const item of hardcoded) {
+      dict[item.key] = item.text;
+    }
+
+    this.createDataFile({ filePath: destPath, content: JSON.stringify(dict, null, 2) });
+
+    return {
+      destination: destPath,
+      extractedCount: hardcoded.length,
+      keys: dict,
+      occurrences: hardcoded,
+    };
+  }
+
+  generateShaderEffect(options: {
+    shaderName: string;
+    effectType: "outline" | "blur" | "dissolve" | "chromatic_aberration" | "wave" | "pixelate";
+  }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const name = safeResourceName(options.shaderName);
+
+    const vsh = `// Attribute & Varying Declarations
+attribute vec3 in_Position;                  // (x,y,z)
+attribute vec4 in_Colour;                    // (r,g,b,a)
+attribute vec2 in_TextureCoord;              // (u,v)
+
+varying vec2 v_vTexcoord;
+varying vec4 v_vColour;
+
+void main() {
+    vec4 object_space_pos = vec4(in_Position.x, in_Position.y, in_Position.z, 1.0);
+    gl_Position = gm_Matrices[MATRIX_WORLD_VIEW_PROJECTION] * object_space_pos;
+    
+    v_vColour = in_Colour;
+    v_vTexcoord = in_TextureCoord;
+}
+`;
+
+    let fsh = "";
+    switch (options.effectType) {
+      case "outline":
+        fsh = `varying vec2 v_vTexcoord;
+varying vec4 v_vColour;
+uniform vec2 u_pixelSize;
+uniform vec4 u_outlineColor;
+
+void main() {
+    vec4 mainColor = texture2D(gm_BaseTexture, v_vTexcoord);
+    if (mainColor.a > 0.1) {
+        gl_FragColor = v_vColour * mainColor;
+    } else {
+        float alpha = 0.0;
+        alpha += texture2D(gm_BaseTexture, v_vTexcoord + vec2(u_pixelSize.x, 0.0)).a;
+        alpha += texture2D(gm_BaseTexture, v_vTexcoord - vec2(u_pixelSize.x, 0.0)).a;
+        alpha += texture2D(gm_BaseTexture, v_vTexcoord + vec2(0.0, u_pixelSize.y)).a;
+        alpha += texture2D(gm_BaseTexture, v_vTexcoord - vec2(0.0, u_pixelSize.y)).a;
+        if (alpha > 0.0) {
+            gl_FragColor = u_outlineColor;
+        } else {
+            gl_FragColor = vec4(0.0);
+        }
+    }
+}
+`;
+        break;
+      case "chromatic_aberration":
+        fsh = `varying vec2 v_vTexcoord;
+varying vec4 v_vColour;
+uniform float u_offset;
+
+void main() {
+    vec2 offsetVec = vec2(u_offset, 0.0);
+    float r = texture2D(gm_BaseTexture, v_vTexcoord + offsetVec).r;
+    float g = texture2D(gm_BaseTexture, v_vTexcoord).g;
+    float b = texture2D(gm_BaseTexture, v_vTexcoord - offsetVec).b;
+    float a = texture2D(gm_BaseTexture, v_vTexcoord).a;
+    gl_FragColor = v_vColour * vec4(r, g, b, a);
+}
+`;
+        break;
+      case "pixelate":
+        fsh = `varying vec2 v_vTexcoord;
+varying vec4 v_vColour;
+uniform vec2 u_resolution;
+uniform float u_pixelSize;
+
+void main() {
+    vec2 coord = floor(v_vTexcoord * u_resolution / u_pixelSize) * u_pixelSize / u_resolution;
+    gl_FragColor = v_vColour * texture2D(gm_BaseTexture, coord);
+}
+`;
+        break;
+      default:
+        fsh = `varying vec2 v_vTexcoord;
+varying vec4 v_vColour;
+uniform float u_time;
+
+void main() {
+    vec2 uv = v_vTexcoord;
+    uv.x += sin(uv.y * 20.0 + u_time * 5.0) * 0.01;
+    gl_FragColor = v_vColour * texture2D(gm_BaseTexture, uv);
+}
+`;
+        break;
+    }
+
+    return this.createShader({ name, vertex: vsh, fragment: fsh, folderName: "Shaders" });
+  }
+
+  extractScriptFromCode(options: {
+    sourceFilePath: string;
+    newScriptName: string;
+    startLine: number;
+    endLine: number;
+  }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const cleanScriptName = safeResourceName(options.newScriptName);
+    const content = this.sandbox.readText(options.sourceFilePath, [".gml"]);
+    const lines = content.split(/\r?\n/);
+
+    if (options.startLine < 1 || options.endLine > lines.length || options.startLine > options.endLine) {
+      throw new Error(`Invalid line range ${options.startLine}-${options.endLine} for file length ${lines.length}`);
+    }
+
+    const extractedLines = lines.slice(options.startLine - 1, options.endLine);
+
+    const scriptCode = `/// @function ${cleanScriptName}()\nfunction ${cleanScriptName}() {\n${extractedLines.map((l) => "    " + l).join("\n")}\n}\n`;
+    const scriptRes = this.createScript(cleanScriptName, scriptCode, "Scripts");
+
+    lines.splice(options.startLine - 1, options.endLine - options.startLine + 1, `${cleanScriptName}();`);
+    const newSourceCode = lines.join("\n");
+    const sha = this.sandbox.sha256For(options.sourceFilePath);
+    this.sandbox.atomicWrite(options.sourceFilePath, newSourceCode, { expectedSha256: sha, backup: true });
+
+    return {
+      extractedScript: scriptRes,
+      sourceFile: options.sourceFilePath,
+      replacedLines: options.endLine - options.startLine + 1,
+    };
+  }
+
+  exportRoomToJson(options: {
+    roomName: string;
+    targetPath?: string | undefined;
+  }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const roomRes = this.findResource(options.roomName, "room");
+    const text = this.sandbox.readText(roomRes.path, [".yy"]);
+    const roomData = requireGmJson<Record<string, unknown>>(text, roomRes.path);
+
+    const exportData = {
+      roomName: options.roomName,
+      width: roomData["roomSettings"] ? (roomData["roomSettings"] as any)["Width"] : 1024,
+      height: roomData["roomSettings"] ? (roomData["roomSettings"] as any)["Height"] : 768,
+      layersCount: Array.isArray(roomData["layers"]) ? roomData["layers"].length : 0,
+      layers: roomData["layers"] ?? [],
+      creationCodeFile: roomData["creationCodeFile"] ?? null,
+    };
+
+    const dest = options.targetPath ?? `datafiles/levels/${options.roomName}.json`;
+    this.createDataFile({ filePath: dest, content: JSON.stringify(exportData, null, 2) });
+
+    return { roomName: options.roomName, exportPath: dest, roomData: exportData };
+  }
+
+  auditArchitecture(): Record<string, unknown> {
+    const deadCode = this.detectDeadCode();
+
+    const scriptCount = this.resources().filter((r) => r.kind === "script").length;
+    const objectCount = this.resources().filter((r) => r.kind === "object").length;
+    const roomCount = this.resources().filter((r) => r.kind === "room").length;
+    const spriteCount = this.resources().filter((r) => r.kind === "sprite").length;
+    const soundCount = this.resources().filter((r) => r.kind === "sound").length;
+
+    let score = 100;
+    const recommendations: string[] = [];
+
+    if (deadCode.length > 5) {
+      score -= 15;
+      recommendations.push(`Remove ${deadCode.length} dead/uncalled script functions.`);
+    }
+    if (scriptCount === 0 && objectCount > 0) {
+      score -= 20;
+      recommendations.push("Project lacks script modules. Consider extracting reusable logic into script structs.");
+    }
+    if (objectCount > 20 && scriptCount < 3) {
+      score -= 15;
+      recommendations.push("High object count with few scripts. Consider adopting MVC or ECS architecture patterns.");
+    }
+
+    const grade = score >= 90 ? "A+" : score >= 80 ? "A" : score >= 70 ? "B" : "C";
+
+    return {
+      architectureScore: score,
+      grade,
+      resourceCounts: { scripts: scriptCount, objects: objectCount, rooms: roomCount, sprites: spriteCount, sounds: soundCount },
+      deadCodeCount: deadCode.length,
+      recommendations,
+    };
+  }
 }
 
 export interface SpriteInspection {

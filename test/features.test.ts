@@ -373,6 +373,16 @@ void test("powerhouse tools: sprite, sound, state machine, room layer, rename, a
     const refs = project.findAssetReferences("obj_actor");
     assert.equal(typeof refs.totalMatches, "number");
 
+    // Enterprise tools test
+    const i18nExt = project.extractI18nStrings();
+    assert.equal(typeof i18nExt.extractedCount, "number");
+
+    const shEffect = project.generateShaderEffect({ shaderName: "shd_outline", effectType: "outline" });
+    assert.equal(shEffect.name, "shd_outline");
+
+    const archAudit = project.auditArchitecture();
+    assert.equal(typeof archAudit.architectureScore, "number");
+
     const fix = project.autofixProject();
     assert.equal(typeof fix.repaired, "boolean");
   } finally {
