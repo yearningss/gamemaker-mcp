@@ -193,6 +193,8 @@ export function registerWorkflowPrompts(server: McpServer): void {
         },
       ],
     }),
+  );
+
   server.registerPrompt(
     "write-clean-gml-script",
     {
