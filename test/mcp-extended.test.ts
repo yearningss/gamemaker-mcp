@@ -133,6 +133,12 @@ const EXPECTED_TOOLS = [
   "gm_ide_layouts_inspect",
   "gm_ide_feather_rules_audit",
   "gm_ide_project_backup_manager",
+  "gm_gml_benchmarking_harness_generate",
+  "gm_project_dependency_tree_export",
+  "gm_room_camera_view_configure",
+  "gm_feather_suppression_comment_add",
+  "gm_gml_state_machine_generator",
+  "gm_sprite_atlas_grid_generate",
 ] as const;
 
 test("stdio MCP exposes the complete extended GameMaker toolset", async () => {

@@ -1183,4 +1183,90 @@ export function registerExtendedTools(server: McpServer, project: GameMakerProje
     },
     async () => run(() => project.inspectProjectBackups()),
   );
+
+  server.registerTool(
+    "gm_gml_benchmarking_harness_generate",
+    {
+      title: "Generate GML performance benchmark harness code",
+      description: "Generate a high-precision get_timer() benchmark code harness to measure performance differences between two GML algorithms.",
+      inputSchema: {
+        codeA: z.string().min(1),
+        codeB: z.string().min(1),
+        iterations: z.number().int().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.generateBenchmarkHarness(args)),
+  );
+
+  server.registerTool(
+    "gm_project_dependency_tree_export",
+    {
+      title: "Export project dependency tree graph and Mermaid diagram",
+      description: "Export project resource dependency graph with Mermaid diagram structure.",
+      inputSchema: {},
+      annotations: READ_ONLY,
+    },
+    async () => run(() => project.exportDependencyTreeJson()),
+  );
+
+  server.registerTool(
+    "gm_room_camera_view_configure",
+    {
+      title: "Configure Room camera views and follow target",
+      description: "Configure Room Viewports (enable views, set width, height, or target follow object).",
+      inputSchema: {
+        roomName: z.string().min(1),
+        viewIndex: z.number().int().optional(),
+        enableViews: z.boolean().optional(),
+        viewWidth: z.number().optional(),
+        viewHeight: z.number().optional(),
+        followObject: z.string().optional(),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.configureRoomCameraViews(args)),
+  );
+
+  server.registerTool(
+    "gm_feather_suppression_comment_add",
+    {
+      title: "Add Feather rule suppression comment to GML file",
+      description: "Automatically insert /// feather ignore GMXXXX comments to suppress specific diagnostic warnings in GML files.",
+      inputSchema: {
+        filePath: z.string().min(1),
+        ruleId: z.string().min(1),
+        line: z.number().int().optional(),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.addFeatherSuppression(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_state_machine_generator",
+    {
+      title: "Generate modern GML State Machine template",
+      description: "Generate a state machine template with enum states and struct methods.",
+      inputSchema: {
+        scriptName: z.string().min(1),
+        states: z.array(z.string().min(1)).min(1),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.generateFsmTemplate(args)),
+  );
+
+  server.registerTool(
+    "gm_sprite_atlas_grid_generate",
+    {
+      title: "Inspect sprite atlas grid dimensions and subimages",
+      description: "Analyze sprite frame dimensions, origin points, and grid layout math for atlas packing.",
+      inputSchema: {
+        spriteName: z.string().min(1),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.inspectSpriteAtlas(args)),
+  );
 }

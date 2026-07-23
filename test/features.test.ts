@@ -424,6 +424,16 @@ void test("powerhouse tools: sprite, sound, state machine, room layer, rename, a
     const backups = project.inspectProjectBackups();
     assert.equal(typeof backups.found, "boolean");
 
+    // Powerhouse tools test
+    const bench = project.generateBenchmarkHarness({ codeA: "var a = 1 + 1;", codeB: "var b = 2 * 1;" });
+    assert.equal(typeof bench.generatedHarnessCode, "string");
+
+    const depExp = project.exportDependencyTreeJson();
+    assert.equal(typeof depExp.totalResources, "number");
+
+    const smGen = project.generateFsmTemplate({ scriptName: "PlayerState", states: ["Idle", "Walk", "Attack"] });
+    assert.equal(typeof smGen.generatedCode, "string");
+
     const fix = project.autofixProject();
     assert.equal(typeof fix.repaired, "boolean");
   } finally {

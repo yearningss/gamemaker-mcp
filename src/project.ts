@@ -2671,6 +2671,170 @@ void main() {
       return { found: true, backupDir, matchingBackupsCount: 0, backups: [] };
     }
   }
+
+  generateBenchmarkHarness(options: { codeA: string; codeB: string; iterations?: number | undefined }): Record<string, unknown> {
+    const iters = options.iterations ?? 100000;
+    const gml = `// GML Performance Benchmark Harness
+function benchmark_run() {
+    var _iterations = ${iters};
+    
+    var _t0 = get_timer();
+    repeat (_iterations) {
+        ${options.codeA}
+    }
+    var _t1 = get_timer();
+    var _timeA = (_t1 - _t0) / 1000.0; // ms
+    
+    var _t2 = get_timer();
+    repeat (_iterations) {
+        ${options.codeB}
+    }
+    var _t3 = get_timer();
+    var _timeB = (_t3 - _t2) / 1000.0; // ms
+    
+    show_debug_message("=== BENCHMARK RESULTS (" + string(_iterations) + " iterations) ===");
+    show_debug_message("Code A: " + string(_timeA) + " ms");
+    show_debug_message("Code B: " + string(_timeB) + " ms");
+    show_debug_message("Difference: " + string(abs(_timeA - _timeB)) + " ms");
+    
+    return { timeA_ms: _timeA, timeB_ms: _timeB, iterations: _iterations };
+}
+`;
+    return { iterations: iters, generatedHarnessCode: gml };
+  }
+
+  exportDependencyTreeJson(): Record<string, unknown> {
+    const res = this.resources();
+    const mermaid = ["graph TD"];
+    const graph: Record<string, string[]> = {};
+
+    for (const r of res) {
+      const targets: string[] = [];
+      try {
+        const asset = this.readAsset(r.name, r.kind);
+        for (const file of asset.files) {
+          for (const other of res) {
+            if (other.name !== r.name && file.content.includes(other.name)) {
+              targets.push(other.name);
+              mermaid.push(`    ${r.name} --> ${other.name}`);
+            }
+          }
+        }
+      } catch {}
+      graph[r.name] = Array.from(new Set(targets));
+    }
+
+    return {
+      totalResources: res.length,
+      dependencyGraph: graph,
+      mermaidDiagram: Array.from(new Set(mermaid)).join("\n"),
+    };
+  }
+
+  configureRoomCameraViews(options: { roomName: string; viewIndex?: number | undefined; enableViews?: boolean | undefined; viewWidth?: number | undefined; viewHeight?: number | undefined; followObject?: string | undefined }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const res = this.findResource(options.roomName, "room");
+    const text = this.sandbox.readText(res.path, [".yy"]);
+    const data = requireGmJson<Record<string, unknown>>(text, res.path);
+
+    const idx = options.viewIndex ?? 0;
+    if (options.enableViews !== undefined) {
+      const roomSettings = (data["roomSettings"] as Record<string, unknown>) ?? {};
+      roomSettings["enableViews"] = options.enableViews;
+      data["roomSettings"] = roomSettings;
+    }
+
+    const views = (data["views"] as Array<Record<string, unknown>>) ?? [];
+    if (views[idx]) {
+      const v = views[idx]!;
+      if (options.viewWidth !== undefined) v["wview"] = options.viewWidth;
+      if (options.viewHeight !== undefined) v["hview"] = options.viewHeight;
+      if (options.followObject !== undefined) {
+        const objRes = this.findResource(options.followObject, "object");
+        v["objectId"] = { name: objRes.name, path: objRes.path };
+      }
+      views[idx] = v;
+    }
+    data["views"] = views;
+
+    const sha = this.sandbox.sha256For(res.path);
+    this.sandbox.atomicWrite(res.path, stringifyGmJson(data), { expectedSha256: sha, backup: true });
+
+    return { roomName: options.roomName, updated: true, viewIndex: idx, viewsData: views };
+  }
+
+  addFeatherSuppression(options: { filePath: string; ruleId: string; line?: number | undefined }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const content = this.sandbox.readText(options.filePath, [".gml"]);
+    const comment = `/// feather ignore ${options.ruleId}`;
+
+    let newContent = "";
+    if (options.line !== undefined && options.line > 0) {
+      const lines = content.split(/\r?\n/);
+      lines.splice(options.line - 1, 0, comment);
+      newContent = lines.join("\n");
+    } else {
+      newContent = `${comment}\n${content}`;
+    }
+
+    const sha = this.sandbox.sha256For(options.filePath);
+    this.sandbox.atomicWrite(options.filePath, newContent, { expectedSha256: sha, backup: true });
+
+    return { filePath: options.filePath, ruleId: options.ruleId, added: true };
+  }
+
+  generateFsmTemplate(options: { states: string[]; scriptName: string }): Record<string, unknown> {
+    const enumMembers = options.states.map((s) => s.toUpperCase()).join(",\n    ");
+    const structMethods = options.states.map((s) => {
+      const lower = s.toLowerCase();
+      return `    states.${lower} = {
+        enter: function() {},
+        step: function() {},
+        draw: function() {},
+        exit: function() {}
+    };`;
+    }).join("\n\n");
+
+    const code = `// State Machine Generator for ${options.scriptName}
+enum State {
+    ${enumMembers}
+}
+
+function StateMachine() constructor {
+    stateCurrent = State.${options.states[0]?.toUpperCase() ?? "IDLE"};
+    states = {};
+
+${structMethods}
+
+    static changeState = function(_newState) {
+        stateCurrent = _newState;
+    };
+
+    static step = function() {
+        // Execute current state step logic
+    };
+}
+`;
+    return { scriptName: options.scriptName, states: options.states, generatedCode: code };
+  }
+
+  inspectSpriteAtlas(options: { spriteName: string }): Record<string, unknown> {
+    const spr = this.inspectSprite(options.spriteName);
+    const cols = Math.ceil(Math.sqrt(spr.framesCount));
+    const rows = Math.ceil(spr.framesCount / Math.max(1, cols));
+    return {
+      spriteName: options.spriteName,
+      width: spr.width,
+      height: spr.height,
+      frameCount: spr.framesCount,
+      originX: spr.origin.x,
+      originY: spr.origin.y,
+      gridCols: cols,
+      gridRows: rows,
+      totalAtlasWidth: cols * spr.width,
+      totalAtlasHeight: rows * spr.height,
+    };
+  }
 }
 
 export interface SpriteInspection {
