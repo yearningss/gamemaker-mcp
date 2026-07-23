@@ -2333,6 +2333,110 @@ void main() {
       message: "Git repository detected. Use gm_file_list or git tools to inspect status.",
     };
   }
+
+  compareVirtualFolders(options: { folderNamesOrPaths: string[] }): Record<string, unknown> {
+    if (!options.folderNamesOrPaths || options.folderNamesOrPaths.length < 2) {
+      throw new Error("Must specify at least 2 virtual folder names or paths to compare.");
+    }
+
+    const folderMap = new Map<string, ProjectResourceRef[]>();
+
+    for (const folderQuery of options.folderNamesOrPaths) {
+      const matchingAssets = this.resources().filter((r) => {
+        return r.path.includes(folderQuery) || r.name.includes(folderQuery);
+      });
+      folderMap.set(folderQuery, matchingAssets);
+    }
+
+    const folderSymbols = new Map<string, {
+      functions: Set<string>;
+      variables: Set<string>;
+      structs: Set<string>;
+      assetRefs: Set<string>;
+      macros: Set<string>;
+    }>();
+
+    for (const [folder, assets] of folderMap.entries()) {
+      const funcs = new Set<string>();
+      const vars = new Set<string>();
+      const structs = new Set<string>();
+      const refs = new Set<string>();
+      const macros = new Set<string>();
+
+      for (const a of assets) {
+        try {
+          const assetData = this.readAsset(a.name, a.kind);
+          for (const f of assetData.files) {
+            if (f.path.endsWith(".gml")) {
+              const content = f.content;
+
+              let match: RegExpExecArray | null;
+              const funcRegex = /\bfunction\s+([A-Za-z_][A-Za-z0-9_]*)\b/g;
+              while ((match = funcRegex.exec(content)) !== null) {
+                if (match[1]) funcs.add(match[1]);
+              }
+
+              const structRegex = /\bfunction\s+([A-Za-z_][A-Za-z0-9_]*)\s*\([^)]*\)\s*constructor\b/g;
+              while ((match = structRegex.exec(content)) !== null) {
+                if (match[1]) structs.add(match[1]);
+              }
+
+              const varRegex = /\b(global|self)\.([A-Za-z_][A-Za-z0-9_]*)\b/g;
+              while ((match = varRegex.exec(content)) !== null) {
+                if (match[2]) vars.add(match[2]);
+              }
+
+              const macroRegex = /#macro\s+([A-Za-z_][A-Za-z0-9_]*)\b/g;
+              while ((match = macroRegex.exec(content)) !== null) {
+                if (match[1]) macros.add(match[1]);
+              }
+
+              for (const r of this.resources()) {
+                if (content.includes(r.name)) {
+                  refs.add(r.name);
+                }
+              }
+            }
+          }
+        } catch {}
+      }
+
+      folderSymbols.set(folder, { functions: funcs, variables: vars, structs, assetRefs: refs, macros });
+    }
+
+    const allFolders = Array.from(folderSymbols.values());
+    const firstFolder = allFolders[0];
+    const commonFunctions = firstFolder ? Array.from(firstFolder.functions).filter((f) => allFolders.every((s) => s.functions.has(f))) : [];
+    const commonVariables = firstFolder ? Array.from(firstFolder.variables).filter((v) => allFolders.every((s) => s.variables.has(v))) : [];
+    const commonStructs = firstFolder ? Array.from(firstFolder.structs).filter((s) => allFolders.every((sf) => sf.structs.has(s))) : [];
+    const commonAssetRefs = firstFolder ? Array.from(firstFolder.assetRefs).filter((r) => allFolders.every((s) => s.assetRefs.has(r))) : [];
+    const commonMacros = firstFolder ? Array.from(firstFolder.macros).filter((m) => allFolders.every((s) => s.macros.has(m))) : [];
+
+    return {
+      foldersCompared: options.folderNamesOrPaths,
+      summary: {
+        commonFunctionsCount: commonFunctions.length,
+        commonVariablesCount: commonVariables.length,
+        commonStructsCount: commonStructs.length,
+        commonAssetRefsCount: commonAssetRefs.length,
+        commonMacrosCount: commonMacros.length,
+      },
+      commonFunctions,
+      commonVariables,
+      commonStructs,
+      commonAssetRefs,
+      commonMacros,
+    };
+  }
+
+  listVirtualFolderAssets(options: { folderNameOrPath: string }): Record<string, unknown> {
+    const assets = this.resources().filter((r) => r.path.includes(options.folderNameOrPath) || r.name.includes(options.folderNameOrPath));
+    return {
+      folderQuery: options.folderNameOrPath,
+      totalAssets: assets.length,
+      assets: assets.map((a) => ({ name: a.name, kind: a.kind, path: a.path })),
+    };
+  }
 }
 
 export interface SpriteInspection {

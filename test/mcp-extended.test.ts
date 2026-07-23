@@ -124,6 +124,8 @@ const EXPECTED_TOOLS = [
   "gm_sequence_configure",
   "gm_timeline_configure",
   "gm_project_git_status",
+  "gm_folder_compare_symbols",
+  "gm_virtual_folder_assets_list",
 ] as const;
 
 test("stdio MCP exposes the complete extended GameMaker toolset", async () => {

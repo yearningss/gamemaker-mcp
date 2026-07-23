@@ -403,6 +403,13 @@ void test("powerhouse tools: sprite, sound, state machine, room layer, rename, a
     const gitSt = project.inspectProjectGitStatus();
     assert.equal(typeof gitSt.isGitRepository, "boolean");
 
+    // Virtual folder comparison test
+    const vfCompare = project.compareVirtualFolders({ folderNamesOrPaths: ["Scripts", "Objects"] });
+    assert.equal((vfCompare.foldersCompared as string[]).length, 2);
+
+    const vfList = project.listVirtualFolderAssets({ folderNameOrPath: "Scripts" });
+    assert.equal(typeof vfList.totalAssets, "number");
+
     const fix = project.autofixProject();
     assert.equal(typeof fix.repaired, "boolean");
   } finally {

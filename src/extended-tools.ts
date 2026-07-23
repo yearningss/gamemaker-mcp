@@ -1068,4 +1068,30 @@ export function registerExtendedTools(server: McpServer, project: GameMakerProje
     },
     async () => run(() => project.inspectProjectGitStatus()),
   );
+
+  server.registerTool(
+    "gm_folder_compare_symbols",
+    {
+      title: "Find common symbols across GameMaker virtual folders",
+      description: "Scan two or more GameMaker IDE virtual folders (.yy/.yyp) to extract and list identical shared functions, variables, structs, macros, and asset references.",
+      inputSchema: {
+        folderNamesOrPaths: z.array(z.string().min(1)).min(2),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.compareVirtualFolders(args)),
+  );
+
+  server.registerTool(
+    "gm_virtual_folder_assets_list",
+    {
+      title: "List assets within a specific GameMaker virtual folder",
+      description: "Filter and list all assets and resources assigned to a specific GameMaker IDE virtual folder.",
+      inputSchema: {
+        folderNameOrPath: z.string().min(1),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.listVirtualFolderAssets(args)),
+  );
 }
