@@ -4,6 +4,8 @@
 [![npm downloads](https://img.shields.io/npm/dm/gamemaker-mcp.svg)](https://www.npmjs.com/package/gamemaker-mcp)
 [![license](https://img.shields.io/npm/l/gamemaker-mcp.svg)](https://github.com/yearningss/gamemaker-mcp/blob/main/LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/yearningss/gamemaker-mcp.svg)](https://github.com/yearningss/gamemaker-mcp)
+[![Smithery Badge](https://smithery.ai/badge/gamemaker-mcp)](https://smithery.ai/server/gamemaker-mcp)
+[![Glama Badge](https://glama.ai/mcp/servers/badge)](https://glama.ai/mcp/servers)
 
 A project-aware local MCP server for GameMaker Studio. It gives an MCP client structured access to a `.yyp` project: inspection, static analysis, guarded editing, object/room/shader operations, snapshots, validation, and official Igor builds.
 
