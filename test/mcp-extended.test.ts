@@ -139,6 +139,21 @@ const EXPECTED_TOOLS = [
   "gm_feather_suppression_comment_add",
   "gm_gml_state_machine_generator",
   "gm_sprite_atlas_grid_generate",
+  "gm_gml_class_builder_generate",
+  "gm_gml_event_boilerplates_generate",
+  "gm_gml_particle_system_builder",
+  "gm_gml_shader_pipeline_builder",
+  "gm_gml_array_struct_utilities_builder",
+  "gm_ide_tileset_configure",
+  "gm_ide_font_configure",
+  "gm_ide_audio_group_assign",
+  "gm_ide_texture_group_assign",
+  "gm_ide_included_file_add",
+  "gm_room_tilemap_layer_add",
+  "gm_room_background_layer_add",
+  "gm_physics_fixture_code_generate",
+  "gm_gml_gc_allocations_audit",
+  "gm_gml_refactor_inline_method",
 ] as const;
 
 test("stdio MCP exposes the complete extended GameMaker toolset", async () => {

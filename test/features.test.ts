@@ -434,6 +434,19 @@ void test("powerhouse tools: sprite, sound, state machine, room layer, rename, a
     const smGen = project.generateFsmTemplate({ scriptName: "PlayerState", states: ["Idle", "Walk", "Attack"] });
     assert.equal(typeof smGen.generatedCode, "string");
 
+    // Master Enterprise tools test
+    const classBld = project.buildGmlClass({ className: "Inventory" });
+    assert.equal(typeof classBld.generatedClassCode, "string");
+
+    const ebGen = project.generateEventBoilerplates({ archetype: "Player", objectName: "obj_player" });
+    assert.equal(typeof ebGen.objectName, "string");
+
+    const psBld = project.buildParticleSystemCode({ systemName: "ps_fire" });
+    assert.equal(typeof psBld.generatedGmlCode, "string");
+
+    const gcAudit = project.auditGcAllocations();
+    assert.equal(typeof gcAudit.totalGmlFilesAudited, "number");
+
     const fix = project.autofixProject();
     assert.equal(typeof fix.repaired, "boolean");
   } finally {

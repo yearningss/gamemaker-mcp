@@ -2835,6 +2835,367 @@ ${structMethods}
       totalAtlasHeight: rows * spr.height,
     };
   }
+
+  buildGmlClass(options: { className: string; fields?: Array<{ name: string; type: string }> | undefined; methods?: string[] | undefined }): Record<string, unknown> {
+    const fieldsInit = (options.fields ?? [{ name: "id", type: "Real" }]).map((f) => `    /// @type {${f.type}}\n    self.${f.name} = undefined;`).join("\n\n");
+    const staticMethods = (options.methods ?? ["update", "cleanup"]).map((m) => `    /// @function ${m}()\n    static ${m} = function() {\n        // Method implementation\n    };`).join("\n\n");
+
+    const code = `/// @function ${options.className}()
+/// @description High-performance GML class constructor with static methods.
+function ${options.className}() constructor {
+${fieldsInit}
+
+${staticMethods}
+
+    /// @function destroy()
+    static destroy = function() {
+        // Free resources & cleanup
+    };
+}
+`;
+    return { className: options.className, generatedClassCode: code };
+  }
+
+  generateEventBoilerplates(options: { archetype: "Player" | "Enemy" | "UI" | "Manager"; objectName: string }): Record<string, unknown> {
+    const archetypes: Record<string, Record<string, string>> = {
+      Player: {
+        Create: "// Player Initialization\nmoveSpeed = 4.0;\nvelocity = { x: 0, y: 0 };\nhp = 100;\nstate = undefined;",
+        Step: "// Player Step Movement & Input\nvar _moveX = keyboard_check(vk_right) - keyboard_check(vk_left);\nvar _moveY = keyboard_check(vk_down) - keyboard_check(vk_up);\nx += _moveX * moveSpeed;\ny += _moveY * moveSpeed;",
+        Draw: "// Player Draw\ndraw_self();",
+        CleanUp: "// Cleanup Player resources\n",
+      },
+      Enemy: {
+        Create: "// Enemy AI Initialization\nhp = 50;\ntargetX = 0;\ntargetY = 0;\nattackTimer = 0;",
+        Step: "// Enemy AI Step\nif (instance_exists(obj_player)) {\n    move_towards_point(obj_player.x, obj_player.y, 2.0);\n}",
+        Draw: "// Draw Enemy & HP Bar\ndraw_self();\ndraw_healthbar(x - 16, y - 24, x + 16, y - 20, (hp / 50) * 100, c_black, c_red, c_green, 0, true, true);",
+        CleanUp: "// Cleanup Enemy AI\n",
+      },
+      UI: {
+        Create: "// UI Manager Setup\nguiWidth = display_get_gui_width();\nguiHeight = display_get_gui_height();",
+        DrawGUI: "// Draw GUI Elements\ndraw_set_colour(c_white);\ndraw_text(16, 16, \"SCORE: \" + string(global.score ?? 0));",
+        CleanUp: "// Cleanup UI\n",
+      },
+      Manager: {
+        Create: "// Persistent Manager Setup\npersistent = true;\nglobal.gameState = \"PLAYING\";",
+        Step: "// Global Game State Step\nif (keyboard_check_pressed(vk_escape)) {\n    game_restart();\n}",
+        CleanUp: "// Cleanup Manager\n",
+      },
+    };
+
+    const selected = archetypes[options.archetype] ?? archetypes["Player"]!;
+    return { objectName: options.objectName, archetype: options.archetype, events: selected };
+  }
+
+  buildParticleSystemCode(options: { systemName: string; shape?: string | undefined; colorStart?: string | undefined; colorEnd?: string | undefined }): Record<string, unknown> {
+    const sys = options.systemName;
+    const code = `// GML Particle System Builder: ${sys}
+function ${sys}_create() {
+    var _sys = part_system_create();
+    part_system_depth(_sys, -100);
+
+    var _type = part_type_create();
+    part_type_shape(_type, ${options.shape ?? "pt_shape_pixel"});
+    part_type_size(_type, 0.5, 1.5, -0.01, 0);
+    part_type_scale(_type, 1, 1);
+    part_type_color2(_type, ${options.colorStart ?? "c_orange"}, ${options.colorEnd ?? "c_red"});
+    part_type_alpha2(_type, 1.0, 0.0);
+    part_type_speed(_type, 2, 5, -0.05, 0);
+    part_type_direction(_type, 0, 360, 0, 0);
+    part_type_blend(_type, true);
+    part_type_life(_type, 30, 60);
+
+    var _emitter = part_emitter_create(_sys);
+    
+    return { system: _sys, type: _type, emitter: _emitter };
+}
+
+function ${sys}_burst(_ps, _x, _y, _count) {
+    part_emitter_region(_ps.system, _ps.emitter, _x - 4, _x + 4, _y - 4, _y + 4, ps_shape_ellipse, ps_distr_gaussian);
+    part_emitter_burst(_ps.system, _ps.emitter, _ps.type, _count);
+}
+`;
+    return { systemName: sys, generatedGmlCode: code };
+  }
+
+  buildShaderPipelineCode(options: { shaderName: string; uniforms?: string[] | undefined }): Record<string, unknown> {
+    const shd = options.shaderName;
+    const unifs = options.uniforms ?? ["u_uTime", "u_uResolution"];
+    const unifVars = unifs.map((u) => `var _h_${u} = shader_get_uniform(${shd}, "${u}");`).join("\n    ");
+    const unifSets = unifs.map((u) => `    // Set ${u}\n    // shader_set_uniform_f(_h_${u}, ...);`).join("\n");
+
+    const code = `// GML Shader Pipeline Builder: ${shd}
+function ${shd}_draw_start() {
+    shader_set(${shd});
+    
+    ${unifVars}
+${unifSets}
+}
+
+function ${shd}_draw_end() {
+    shader_reset();
+}
+`;
+    return { shaderName: shd, uniforms: unifs, generatedGmlCode: code };
+  }
+
+  buildArrayStructUtils(options: { utilityType: "sort" | "filter" | "pool" | "deep_copy" }): Record<string, unknown> {
+    const templates: Record<string, string> = {
+      sort: `// GML Fast Array Sort
+function array_sort_by_key(_arr, _key, _ascending) {
+    var _dir = _ascending ? 1 : -1;
+    array_sort(_arr, method({ key: _key, dir: _dir }, function(_a, _b) {
+        if (_a[$ key] < _b[$ key]) return -dir;
+        if (_a[$ key] > _b[$ key]) return dir;
+        return 0;
+    }));
+    return _arr;
+}`,
+      filter: `// GML Array Filter Predicate
+function array_filter_predicate(_arr, _predicate) {
+    var _result = [];
+    var _len = array_length(_arr);
+    for (var _i = 0; _i < _len; _i++) {
+        var _item = _arr[_i];
+        if (_predicate(_item)) {
+            array_push(_result, _item);
+        }
+    }
+    return _result;
+}`,
+      pool: `// GML Object / Struct Pool
+function StructPool(_constructor) constructor {
+    pool = [];
+    ctor = _constructor;
+
+    static get = function() {
+        if (array_length(pool) > 0) {
+            return array_pop(pool);
+        }
+        return new ctor();
+    };
+
+    static release = function(_obj) {
+        array_push(pool, _obj);
+    };
+}`,
+      deep_copy: `// GML Deep Struct Copy
+function struct_deep_copy(_struct) {
+    var _copy = {};
+    var _names = struct_get_names(_struct);
+    var _len = array_length(_names);
+    for (var _i = 0; _i < _len; _i++) {
+        var _k = _names[_i];
+        var _val = _struct[$ _k];
+        if (is_struct(_val)) {
+            _copy[$ _k] = struct_deep_copy(_val);
+        } else if (is_array(_val)) {
+            _copy[$ _k] = array_clone(_val);
+        } else {
+            _copy[$ _k] = _val;
+        }
+    }
+    return _copy;
+}`,
+    };
+
+    const code = templates[options.utilityType] ?? templates["sort"]!;
+    return { utilityType: options.utilityType, generatedGmlCode: code };
+  }
+
+  configureTileSet(options: { tilesetName: string; tileWidth?: number | undefined; tileHeight?: number | undefined }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const res = this.findResource(options.tilesetName, "tileset");
+    const text = this.sandbox.readText(res.path, [".yy"]);
+    const data = requireGmJson<Record<string, unknown>>(text, res.path);
+
+    if (options.tileWidth !== undefined) data["tileWidth"] = options.tileWidth;
+    if (options.tileHeight !== undefined) data["tileHeight"] = options.tileHeight;
+
+    const sha = this.sandbox.sha256For(res.path);
+    this.sandbox.atomicWrite(res.path, stringifyGmJson(data), { expectedSha256: sha, backup: true });
+
+    return { tilesetName: options.tilesetName, updated: true, tilesetData: data };
+  }
+
+  configureFontProperties(options: { fontName: string; fontSize?: number | undefined; isBold?: boolean | undefined }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const res = this.findResource(options.fontName, "font");
+    const text = this.sandbox.readText(res.path, [".yy"]);
+    const data = requireGmJson<Record<string, unknown>>(text, res.path);
+
+    if (options.fontSize !== undefined) data["size"] = options.fontSize;
+    if (options.isBold !== undefined) data["bold"] = options.isBold;
+
+    const sha = this.sandbox.sha256For(res.path);
+    this.sandbox.atomicWrite(res.path, stringifyGmJson(data), { expectedSha256: sha, backup: true });
+
+    return { fontName: options.fontName, updated: true, fontData: data };
+  }
+
+  assignAudioGroup(options: { soundName: string; audioGroupName: string }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const res = this.findResource(options.soundName, "sound");
+    const text = this.sandbox.readText(res.path, [".yy"]);
+    const data = requireGmJson<Record<string, unknown>>(text, res.path);
+
+    data["audioGroupId"] = { name: options.audioGroupName, path: `audiogroups/${options.audioGroupName}` };
+
+    const sha = this.sandbox.sha256For(res.path);
+    this.sandbox.atomicWrite(res.path, stringifyGmJson(data), { expectedSha256: sha, backup: true });
+
+    return { soundName: options.soundName, audioGroupName: options.audioGroupName, assigned: true };
+  }
+
+  assignTextureGroup(options: { assetName: string; textureGroupName: string }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const res = this.resources().find((r) => r.name === options.assetName);
+    if (!res) throw new Error(`Asset ${options.assetName} not found.`);
+
+    const text = this.sandbox.readText(res.path, [".yy"]);
+    const data = requireGmJson<Record<string, unknown>>(text, res.path);
+
+    data["textureGroupId"] = { name: options.textureGroupName, path: `texturegroups/${options.textureGroupName}` };
+
+    const sha = this.sandbox.sha256For(res.path);
+    this.sandbox.atomicWrite(res.path, stringifyGmJson(data), { expectedSha256: sha, backup: true });
+
+    return { assetName: options.assetName, textureGroupName: options.textureGroupName, assigned: true };
+  }
+
+  addIncludedFile(options: { relativeFilePath: string; content: string }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const targetPath = path.join("datafiles", options.relativeFilePath);
+    this.sandbox.atomicWrite(targetPath, options.content);
+
+    return { relativeFilePath: options.relativeFilePath, targetPath, added: true };
+  }
+
+  addRoomTilemapLayer(options: { roomName: string; layerName: string; tilesetName: string }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const roomRes = this.findResource(options.roomName, "room");
+    const tsRes = this.findResource(options.tilesetName, "tileset");
+
+    const text = this.sandbox.readText(roomRes.path, [".yy"]);
+    const data = requireGmJson<Record<string, unknown>>(text, roomRes.path);
+    const layers = (data["layers"] as Array<Record<string, unknown>>) ?? [];
+
+    layers.push({
+      resourceType: "GMRTileLayer",
+      resourceVersion: "1.0",
+      name: options.layerName,
+      tilesetId: { name: tsRes.name, path: tsRes.path },
+      visible: true,
+      depth: 0,
+    });
+    data["layers"] = layers;
+
+    const sha = this.sandbox.sha256For(roomRes.path);
+    this.sandbox.atomicWrite(roomRes.path, stringifyGmJson(data), { expectedSha256: sha, backup: true });
+
+    return { roomName: options.roomName, layerName: options.layerName, added: true };
+  }
+
+  addRoomBackgroundLayer(options: { roomName: string; layerName: string; spriteName?: string | undefined; hspeed?: number | undefined; vspeed?: number | undefined }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const roomRes = this.findResource(options.roomName, "room");
+
+    const text = this.sandbox.readText(roomRes.path, [".yy"]);
+    const data = requireGmJson<Record<string, unknown>>(text, roomRes.path);
+    const layers = (data["layers"] as Array<Record<string, unknown>>) ?? [];
+
+    let sprObj: Record<string, unknown> | null = null;
+    if (options.spriteName) {
+      const sprRes = this.findResource(options.spriteName, "sprite");
+      sprObj = { name: sprRes.name, path: sprRes.path };
+    }
+
+    layers.push({
+      resourceType: "GMRBackgroundLayer",
+      resourceVersion: "1.0",
+      name: options.layerName,
+      spriteId: sprObj,
+      hspeed: options.hspeed ?? 0,
+      vspeed: options.vspeed ?? 0,
+      visible: true,
+      depth: 100,
+    });
+    data["layers"] = layers;
+
+    const sha = this.sandbox.sha256For(roomRes.path);
+    this.sandbox.atomicWrite(roomRes.path, stringifyGmJson(data), { expectedSha256: sha, backup: true });
+
+    return { roomName: options.roomName, layerName: options.layerName, added: true };
+  }
+
+  generatePhysicsFixtureCode(options: { fixtureType: "box" | "circle" | "polygon"; density?: number | undefined; friction?: number | undefined; restitution?: number | undefined }): Record<string, unknown> {
+    const code = `// GML Physics Fixture Generator
+function physics_fixture_setup(_inst) {
+    var _fix = physics_fixture_create();
+    
+    // Shape configuration
+    if ("${options.fixtureType}" == "box") {
+        physics_fixture_set_box_shape(_fix, 16, 16);
+    } else if ("${options.fixtureType}" == "circle") {
+        physics_fixture_set_circle_shape(_fix, 16);
+    }
+    
+    physics_fixture_set_density(_fix, ${options.density ?? 0.5});
+    physics_fixture_set_friction(_fix, ${options.friction ?? 0.2});
+    physics_fixture_set_restitution(_fix, ${options.restitution ?? 0.1});
+    physics_fixture_set_linear_damping(_fix, 0.1);
+    physics_fixture_set_angular_damping(_fix, 0.1);
+    
+    var _bound = physics_fixture_bind(_fix, _inst);
+    physics_fixture_delete(_fix);
+    
+    return _bound;
+}
+`;
+    return { fixtureType: options.fixtureType, generatedPhysicsCode: code };
+  }
+
+  auditGcAllocations(): Record<string, unknown> {
+    const gmlFiles = walkFiles(this.config.projectRoot)
+      .map((p) => this.sandbox.relative(p))
+      .filter((p) => p.endsWith(".gml"));
+
+    const warnings: Array<{ file: string; line: number; reason: string }> = [];
+
+    for (const file of gmlFiles) {
+      const content = this.sandbox.readText(file, [".gml"]);
+      const lines = content.split(/\r?\n/);
+      let lineNo = 0;
+      for (const line of lines) {
+        lineNo++;
+        if (line.includes("new ") && (file.includes("Step") || file.includes("Draw"))) {
+          warnings.push({ file, line: lineNo, reason: "Creating new struct inside Step/Draw event causes GC pressure." });
+        }
+        if (line.includes("[") && line.includes("]") && line.includes("var ") && file.includes("Step")) {
+          warnings.push({ file, line: lineNo, reason: "Array creation inside Step event allocates temporary memory." });
+        }
+      }
+    }
+
+    return {
+      totalGmlFilesAudited: gmlFiles.length,
+      gcAllocationWarningsCount: warnings.length,
+      warnings,
+    };
+  }
+
+  refactorInlineMethod(options: { filePath: string; targetCode: string; replacementCode: string }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const content = this.sandbox.readText(options.filePath, [".gml"]);
+    if (!content.includes(options.targetCode)) {
+      return { filePath: options.filePath, replaced: false, message: "Target code block not found in file." };
+    }
+
+    const newContent = content.replace(options.targetCode, options.replacementCode);
+    const sha = this.sandbox.sha256For(options.filePath);
+    this.sandbox.atomicWrite(options.filePath, newContent, { expectedSha256: sha, backup: true });
+
+    return { filePath: options.filePath, replaced: true };
+  }
 }
 
 export interface SpriteInspection {

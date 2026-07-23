@@ -1269,4 +1269,222 @@ export function registerExtendedTools(server: McpServer, project: GameMakerProje
     },
     async (args) => run(() => project.inspectSpriteAtlas(args)),
   );
+
+  server.registerTool(
+    "gm_gml_class_builder_generate",
+    {
+      title: "Build GML struct class constructor with static methods",
+      description: "Generate object-oriented GML class constructor code with typed fields and static methods.",
+      inputSchema: {
+        className: z.string().min(1),
+        fields: z.array(z.object({ name: z.string(), type: z.string() })).optional(),
+        methods: z.array(z.string()).optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildGmlClass(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_event_boilerplates_generate",
+    {
+      title: "Generate GML object event code boilerplates",
+      description: "Generate Create, Step, Draw, DrawGUI, and CleanUp event code tailored for specific game entity archetypes.",
+      inputSchema: {
+        archetype: z.enum(["Player", "Enemy", "UI", "Manager"]),
+        objectName: z.string().min(1),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.generateEventBoilerplates(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_particle_system_builder",
+    {
+      title: "Build GML Particle System code generator",
+      description: "Generate GML code for particle system creation, emitter configuration, and burst triggers.",
+      inputSchema: {
+        systemName: z.string().min(1),
+        shape: z.string().optional(),
+        colorStart: z.string().optional(),
+        colorEnd: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildParticleSystemCode(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_shader_pipeline_builder",
+    {
+      title: "Build GML Shader draw pipeline helper code",
+      description: "Generate GML shader uniform setters, shader_set, and shader_reset helper functions.",
+      inputSchema: {
+        shaderName: z.string().min(1),
+        uniforms: z.array(z.string()).optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildShaderPipelineCode(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_array_struct_utilities_builder",
+    {
+      title: "Build GML Array & Struct utility code snippets",
+      description: "Generate optimal GML functions for array sorting, filtering, object pooling, and deep copying.",
+      inputSchema: {
+        utilityType: z.enum(["sort", "filter", "pool", "deep_copy"]),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildArrayStructUtils(args)),
+  );
+
+  server.registerTool(
+    "gm_ide_tileset_configure",
+    {
+      title: "Configure TileSet asset dimensions in GameMaker IDE",
+      description: "Configure TileSet tile width, height, and separation dimensions in .yy files.",
+      inputSchema: {
+        tilesetName: z.string().min(1),
+        tileWidth: z.number().optional(),
+        tileHeight: z.number().optional(),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.configureTileSet(args)),
+  );
+
+  server.registerTool(
+    "gm_ide_font_configure",
+    {
+      title: "Configure Font asset size and properties in GameMaker IDE",
+      description: "Configure Font font size and bold styling in .yy files.",
+      inputSchema: {
+        fontName: z.string().min(1),
+        fontSize: z.number().optional(),
+        isBold: z.boolean().optional(),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.configureFontProperties(args)),
+  );
+
+  server.registerTool(
+    "gm_ide_audio_group_assign",
+    {
+      title: "Assign Sound asset to specific Audio Group",
+      description: "Assign Sound assets to specific Audio Groups in .yy files.",
+      inputSchema: {
+        soundName: z.string().min(1),
+        audioGroupName: z.string().min(1),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.assignAudioGroup(args)),
+  );
+
+  server.registerTool(
+    "gm_ide_texture_group_assign",
+    {
+      title: "Assign Sprite or TileSet asset to specific Texture Group",
+      description: "Assign Sprite or TileSet assets to specific Texture Groups in .yy files.",
+      inputSchema: {
+        assetName: z.string().min(1),
+        textureGroupName: z.string().min(1),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.assignTextureGroup(args)),
+  );
+
+  server.registerTool(
+    "gm_ide_included_file_add",
+    {
+      title: "Add raw included file to datafiles/ directory",
+      description: "Safely create or copy raw data files into datafiles/ directory.",
+      inputSchema: {
+        relativeFilePath: z.string().min(1),
+        content: z.string(),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.addIncludedFile(args)),
+  );
+
+  server.registerTool(
+    "gm_room_tilemap_layer_add",
+    {
+      title: "Add new Tilemap Layer to Room asset",
+      description: "Add a new GMRTileLayer to a Room asset configuring TileSet reference.",
+      inputSchema: {
+        roomName: z.string().min(1),
+        layerName: z.string().min(1),
+        tilesetName: z.string().min(1),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.addRoomTilemapLayer(args)),
+  );
+
+  server.registerTool(
+    "gm_room_background_layer_add",
+    {
+      title: "Add new Background Layer to Room asset",
+      description: "Add a new GMRBackgroundLayer to a Room asset configuring sprite and parallax speeds.",
+      inputSchema: {
+        roomName: z.string().min(1),
+        layerName: z.string().min(1),
+        spriteName: z.string().optional(),
+        hspeed: z.number().optional(),
+        vspeed: z.number().optional(),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.addRoomBackgroundLayer(args)),
+  );
+
+  server.registerTool(
+    "gm_physics_fixture_code_generate",
+    {
+      title: "Generate GML Box2D Physics Fixture code",
+      description: "Generate GML code for creating and binding dynamic physics fixtures.",
+      inputSchema: {
+        fixtureType: z.enum(["box", "circle", "polygon"]),
+        density: z.number().optional(),
+        friction: z.number().optional(),
+        restitution: z.number().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.generatePhysicsFixtureCode(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_gc_allocations_audit",
+    {
+      title: "Audit GML code for hidden Garbage Collection allocation spikes",
+      description: "Scan GML files for temporary struct/array allocations inside Step/Draw loops causing GC stutter.",
+      inputSchema: {},
+      annotations: READ_ONLY,
+    },
+    async () => run(() => project.auditGcAllocations()),
+  );
+
+  server.registerTool(
+    "gm_gml_refactor_inline_method",
+    {
+      title: "Refactor and replace code blocks across GML file",
+      description: "Perform precise targeted code block refactoring inside GML files.",
+      inputSchema: {
+        filePath: z.string().min(1),
+        targetCode: z.string().min(1),
+        replacementCode: z.string(),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.refactorInlineMethod(args)),
+  );
 }
