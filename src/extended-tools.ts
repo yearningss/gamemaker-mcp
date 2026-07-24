@@ -426,8 +426,8 @@ export function registerExtendedTools(server: McpServer, project: GameMakerProje
   server.registerTool(
     "gm_state_machine_generate",
     {
-      title: "Generate Finite State Machine boilerplate",
-      description: "Generate a clean, struct-based GML Finite State Machine controller script (scr_state_machine) and register it in the project.",
+      title: "Generate Finite State Machine controller script",
+      description: "Generate and register a production-ready struct & enum-based GML Finite State Machine script in the project.",
       inputSchema: {
         scriptName: z.string().optional(),
         folderName: z.string().optional(),
