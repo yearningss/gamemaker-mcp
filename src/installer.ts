@@ -214,6 +214,7 @@ export function writeClientConfig(
     const args = isNpx ? (isWin ? ["/c", "npx", "-y", "gamemaker-mcp"] : ["-y", "gamemaker-mcp"]) : [mcpIndexJsPath];
 
     (mcpServers as Record<string, unknown>)["gamemaker"] = {
+      type: "stdio",
       command,
       args,
       env,
