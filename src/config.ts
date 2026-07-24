@@ -78,16 +78,39 @@ function optionalExistingFile(value: string | undefined, label: string): string 
 }
 
 export function loadConfig(argv = process.argv.slice(2), env = process.env): ServerConfig {
-  const projectInput = env.GAMEMAKER_PROJECT || argv[0] || process.cwd();
   let projectFile = "";
   let projectRoot = process.cwd();
 
-  try {
-    projectFile = findProjectFile(projectInput);
-    projectRoot = fs.realpathSync(path.dirname(projectFile));
-  } catch {
-    // Zero-crash fallback when started outside a .yyp directory
-    projectFile = "";
+  const cwd = process.cwd();
+  const explicitInput = argv[0];
+  const envInput = env.GAMEMAKER_PROJECT;
+
+  // 1. Try explicit command-line argument first if provided
+  if (explicitInput) {
+    try {
+      projectFile = findProjectFile(explicitInput);
+      projectRoot = fs.realpathSync(path.dirname(projectFile));
+    } catch {}
+  }
+
+  // 2. Try current working directory (process.cwd()) next so opening any project folder auto-detects its .yyp
+  if (!projectFile && cwd) {
+    try {
+      projectFile = findProjectFile(cwd);
+      projectRoot = fs.realpathSync(path.dirname(projectFile));
+    } catch {}
+  }
+
+  // 3. Fall back to GAMEMAKER_PROJECT env if cwd has no .yyp project
+  if (!projectFile && envInput) {
+    try {
+      projectFile = findProjectFile(envInput);
+      projectRoot = fs.realpathSync(path.dirname(projectFile));
+    } catch {}
+  }
+
+  // 4. Zero-crash fallback when started outside any .yyp directory
+  if (!projectFile) {
     projectRoot = fs.realpathSync(process.cwd());
   }
   const modeRaw = (env.GAMEMAKER_MCP_MODE ?? "read-only").toLowerCase();
