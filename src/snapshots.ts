@@ -228,12 +228,26 @@ export class SnapshotService {
     }
     this.sandbox = new ProjectSandbox(this.projectRoot, this.mode, this.maxFileBytes);
 
-    const projectFileInput = options.projectFile ?? this.findOnlyProjectFile();
-    const realProjectFile = fs.realpathSync(projectFileInput);
-    assertInside(this.projectRoot, realProjectFile, "Project file");
-    const relative = this.sandbox.relative(realProjectFile);
-    this.projectFile = normalizeProjectRelativePath(relative);
-    if (!this.projectFile.toLowerCase().endsWith(".yyp")) {
+    if (options.projectFile) {
+      const realProjectFile = fs.realpathSync(options.projectFile);
+      assertInside(this.projectRoot, realProjectFile, "Project file");
+      const relative = this.sandbox.relative(realProjectFile);
+      this.projectFile = normalizeProjectRelativePath(relative);
+    } else {
+      let found = "";
+      try {
+        found = this.findOnlyProjectFile();
+      } catch {}
+      if (found) {
+        const realProjectFile = fs.realpathSync(found);
+        assertInside(this.projectRoot, realProjectFile, "Project file");
+        const relative = this.sandbox.relative(realProjectFile);
+        this.projectFile = normalizeProjectRelativePath(relative);
+      } else {
+        this.projectFile = "";
+      }
+    }
+    if (this.projectFile && !this.projectFile.toLowerCase().endsWith(".yyp")) {
       throw new Error(`Project file must use the .yyp extension: ${this.projectFile}`);
     }
   }

@@ -12,14 +12,6 @@ async function main(): Promise<void> {
     return;
   }
 
-  if (!process.env.GAMEMAKER_PROJECT && argv.length === 0) {
-    const discovered = discoverProjectFile();
-    if (!discovered) {
-      printHelp();
-      return;
-    }
-  }
-
   const config = loadConfig(argv);
   const server = createServer(config);
   const transport = new StdioServerTransport();
