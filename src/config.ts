@@ -79,8 +79,17 @@ function optionalExistingFile(value: string | undefined, label: string): string 
 
 export function loadConfig(argv = process.argv.slice(2), env = process.env): ServerConfig {
   const projectInput = env.GAMEMAKER_PROJECT || argv[0] || process.cwd();
-  const projectFile = findProjectFile(projectInput);
-  const projectRoot = fs.realpathSync(path.dirname(projectFile));
+  let projectFile = "";
+  let projectRoot = process.cwd();
+
+  try {
+    projectFile = findProjectFile(projectInput);
+    projectRoot = fs.realpathSync(path.dirname(projectFile));
+  } catch {
+    // Zero-crash fallback when started outside a .yyp directory
+    projectFile = "";
+    projectRoot = fs.realpathSync(process.cwd());
+  }
   const modeRaw = (env.GAMEMAKER_MCP_MODE ?? "read-only").toLowerCase();
   if (modeRaw !== "read-only" && modeRaw !== "workspace-write") {
     throw new Error("GAMEMAKER_MCP_MODE must be read-only or workspace-write");

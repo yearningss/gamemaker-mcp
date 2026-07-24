@@ -122,10 +122,13 @@ export class GameMakerProject {
   constructor(config: ServerConfig) {
     this.config = config;
     this.sandbox = new ProjectSandbox(config.projectRoot, config.mode, config.maxFileBytes);
-    this.projectRelativePath = this.sandbox.relative(config.projectFile);
+    this.projectRelativePath = config.projectFile ? this.sandbox.relative(config.projectFile) : "";
   }
 
   projectData(): YypData {
+    if (!this.projectRelativePath) {
+      throw new Error("No .yyp GameMaker project is currently loaded. Open a GameMaker project folder or set GAMEMAKER_PROJECT.");
+    }
     return requireGmJson<YypData>(
       this.sandbox.readText(this.projectRelativePath, [".yyp"]),
       this.projectRelativePath,
@@ -145,6 +148,17 @@ export class GameMakerProject {
   }
 
   summary(): ProjectSummary {
+    if (!this.projectRelativePath) {
+      return {
+        name: "No Project Loaded",
+        projectFile: "",
+        projectRoot: this.config.projectRoot,
+        mode: this.config.mode,
+        resourceCount: 0,
+        counts: {},
+        roomOrder: [],
+      };
+    }
     const yyp = this.projectData();
     const resources = this.resources();
     const counts: Record<string, number> = {};
