@@ -952,6 +952,29 @@ export class ProjectAnalysisService {
         continue;
       }
 
+      const lowerName = resource.name.toLowerCase();
+      const lowerPath = resource.path.replaceAll("\\", "/").toLowerCase();
+
+      // Ignore internal library assets (e.g. Juju Adams' Input library, Scribble, Snap, GMLive, etc.)
+      if (
+        lowerName.startsWith("__") ||
+        lowerName.startsWith("input_") ||
+        lowerName.startsWith("scribble_") ||
+        lowerName.startsWith("snap_") ||
+        lowerName.startsWith("live_") ||
+        lowerName.startsWith("steam_") ||
+        lowerName.startsWith("fmod_") ||
+        lowerPath.includes("/input/") ||
+        lowerPath.includes("/libraries/") ||
+        lowerPath.includes("/packages/") ||
+        lowerPath.includes("/vendor/") ||
+        lowerPath.includes("/thirdparty/") ||
+        lowerPath.includes("/third_party/") ||
+        lowerPath.includes("/extensions/")
+      ) {
+        continue;
+      }
+
       const regex = new RegExp(`\\b${resource.name}\\b`);
       let isUsed = false;
 
