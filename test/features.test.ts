@@ -447,6 +447,19 @@ void test("powerhouse tools: sprite, sound, state machine, room layer, rename, a
     const gcAudit = project.auditGcAllocations();
     assert.equal(typeof gcAudit.totalGmlFilesAudited, "number");
 
+    // Grand Master 160 tools assertions
+    const camProj = project.buildCameraProjectionCode({ is3D: true });
+    assert.equal(typeof camProj.generatedCameraCode, "string");
+
+    const surfMgr = project.buildSurfaceManagerCode({ surfaceName: "surf_main" });
+    assert.equal(typeof surfMgr.generatedSurfaceCode, "string");
+
+    const dsConv = project.convertDsToStruct({ gmlCode: "var m = ds_map_create();" });
+    assert.equal(typeof dsConv.convertedStructCode, "string");
+
+    const saveLoad = project.buildSaveLoadJsonSystem({ saveFileName: "save.dat" });
+    assert.equal(typeof saveLoad.generatedSaveLoadCode, "string");
+
     const fix = project.autofixProject();
     assert.equal(typeof fix.repaired, "boolean");
   } finally {

@@ -154,6 +154,21 @@ const EXPECTED_TOOLS = [
   "gm_physics_fixture_code_generate",
   "gm_gml_gc_allocations_audit",
   "gm_gml_refactor_inline_method",
+  "gm_gml_camera_projection_builder",
+  "gm_gml_surface_manager_builder",
+  "gm_gml_ds_to_struct_converter",
+  "gm_gml_save_load_json_builder",
+  "gm_gml_event_listener_pubsub_builder",
+  "gm_gml_math_vector_matrix_builder",
+  "gm_gml_input_action_mapper_builder",
+  "gm_gml_audio_sound_pool_builder",
+  "gm_gml_grid_pathfinding_builder",
+  "gm_gml_ui_layout_flexbox_builder",
+  "gm_ide_animation_curve_configure",
+  "gm_ide_resource_tags_manage",
+  "gm_room_creation_code_clear",
+  "gm_gml_dead_code_remover",
+  "gm_gml_type_check_asserts_generator",
 ] as const;
 
 test("stdio MCP exposes the complete extended GameMaker toolset", async () => {

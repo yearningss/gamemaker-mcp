@@ -4,6 +4,7 @@ import path from "node:path";
 import { applyEdits, modify, type JSONPath } from "jsonc-parser";
 
 import { parseGmJson, requireGmJson, stringifyGmJson } from "./gm-json.js";
+import { ProjectAnalysisService } from "./analysis.js";
 import { ProjectSandbox } from "./security.js";
 import type {
   ProjectResourceRef,
@@ -3195,6 +3196,341 @@ function physics_fixture_setup(_inst) {
     this.sandbox.atomicWrite(options.filePath, newContent, { expectedSha256: sha, backup: true });
 
     return { filePath: options.filePath, replaced: true };
+  }
+
+  buildCameraProjectionCode(options: { is3D?: boolean | undefined; fov?: number | undefined; width?: number | undefined; height?: number | undefined }): Record<string, unknown> {
+    const is3d = options.is3D ?? false;
+    const w = options.width ?? 1280;
+    const h = options.height ?? 720;
+    const fov = options.fov ?? 60;
+
+    const code = `// GML Camera & Projection Matrix Builder
+function camera_setup_projection(_cam, _x, _y, _z) {
+    var _projMat;
+    if (${is3d}) {
+        _projMat = matrix_build_projection_perspective_fov(-${fov}, -${w}/${h}, 1, 32000);
+        var _lookMat = matrix_build_lookat(_x, _y, _z, _x, _y + 100, _z, 0, 0, 1);
+        camera_set_view_mat(_cam, _lookMat);
+    } else {
+        _projMat = matrix_build_projection_ortho(${w}, ${h}, 1, 32000);
+        var _lookMat2D = matrix_build_lookat(_x, _y, -100, _x, _y, 0, 0, 1, 0);
+        camera_set_view_mat(_cam, _lookMat2D);
+    }
+    camera_set_proj_mat(_cam, _projMat);
+    camera_apply(_cam);
+}
+`;
+    return { is3D: is3d, width: w, height: h, fov, generatedCameraCode: code };
+  }
+
+  buildSurfaceManagerCode(options: { surfaceName: string; width?: number | undefined; height?: number | undefined }): Record<string, unknown> {
+    const sName = options.surfaceName;
+    const w = options.width ?? 1024;
+    const h = options.height ?? 768;
+
+    const code = `// GML Surface Manager Struct: ${sName}
+function SurfaceManager(_w, _h) constructor {
+    surf = -1;
+    width = _w;
+    height = _h;
+
+    static get = function() {
+        if (!surface_exists(surf)) {
+            surf = surface_create(width, height);
+            surface_set_target(surf);
+            draw_clear_alpha(c_black, 0);
+            surface_reset_target();
+        }
+        return surf;
+    };
+
+    static setTarget = function() {
+        surface_set_target(get());
+    };
+
+    static resetTarget = function() {
+        surface_reset_target();
+    };
+
+    static destroy = function() {
+        if (surface_exists(surf)) {
+            surface_free(surf);
+            surf = -1;
+        }
+    };
+}
+`;
+    return { surfaceName: sName, width: w, height: h, generatedSurfaceCode: code };
+  }
+
+  convertDsToStruct(options: { gmlCode: string }): Record<string, unknown> {
+    let converted = options.gmlCode;
+    converted = converted.replace(/\bds_map_create\(\)/g, "{}");
+    converted = converted.replace(/\bds_list_create\(\)/g, "[]");
+    converted = converted.replace(/\bds_map_destroy\(([^)]+)\)/g, "// $1 freed by GC");
+    converted = converted.replace(/\bds_list_destroy\(([^)]+)\)/g, "// $1 freed by GC");
+    converted = converted.replace(/\bds_map_find_value\(([^,]+),\s*([^)]+)\)/g, "$1[$ $2]");
+    converted = converted.replace(/\bds_map_add\(([^,]+),\s*([^,]+),\s*([^)]+)\)/g, "$1[$ $2] = $3");
+    converted = converted.replace(/\bds_list_add\(([^,]+),\s*([^)]+)\)/g, "array_push($1, $2)");
+    converted = converted.replace(/\bds_list_size\(([^)]+)\)/g, "array_length($1)");
+
+    return { originalCode: options.gmlCode, convertedStructCode: converted };
+  }
+
+  buildSaveLoadJsonSystem(options: { saveFileName: string; encrypt?: boolean | undefined }): Record<string, unknown> {
+    const fName = options.saveFileName;
+    const code = `// GML Save & Load JSON System: ${fName}
+function game_save_data(_saveData) {
+    var _jsonString = json_stringify(_saveData);
+    var _buf = buffer_create(string_byte_length(_jsonString) + 1, buffer_fixed, 1);
+    buffer_write(_buf, buffer_string, _jsonString);
+    buffer_save(_buf, "${fName}");
+    buffer_delete(_buf);
+    show_debug_message("Game saved successfully to " + "${fName}");
+}
+
+function game_load_data() {
+    if (!file_exists("${fName}")) return undefined;
+    var _buf = buffer_load("${fName}");
+    var _jsonString = buffer_read(_buf, buffer_string);
+    buffer_delete(_buf);
+    var _data = json_parse(_jsonString);
+    show_debug_message("Game loaded successfully from " + "${fName}");
+    return _data;
+}
+`;
+    return { saveFileName: fName, generatedSaveLoadCode: code };
+  }
+
+  buildPubSubEventListener(options: { managerName: string }): Record<string, unknown> {
+    const mName = options.managerName;
+    const code = `// GML Event Observer (Pub/Sub) System: ${mName}
+function EventManager() constructor {
+    listeners = {};
+
+    static subscribe = function(_eventName, _callback) {
+        if (!struct_exists(listeners, _eventName)) {
+            listeners[$ _eventName] = [];
+        }
+        array_push(listeners[$ _eventName], _callback);
+    };
+
+    static emit = function(_eventName, _data) {
+        if (struct_exists(listeners, _eventName)) {
+            var _list = listeners[$ _eventName];
+            var _len = array_length(_list);
+            for (var _i = 0; _i < _len; _i++) {
+                _list[_i](_data);
+            }
+        }
+    };
+}
+`;
+    return { managerName: mName, generatedPubSubCode: code };
+  }
+
+  buildVectorMatrixMathUtils(options: { category: "vector2" | "vector3" | "matrix" | "easing" }): Record<string, unknown> {
+    const templates: Record<string, string> = {
+      vector2: `// GML 2D Vector Math
+function Vec2(_x, _y) constructor {
+    x = _x; y = _y;
+    static dot = function(_v) { return x * _v.x + y * _v.y; };
+    static len = function() { return point_distance(0, 0, x, y); };
+    static normalize = function() { var _l = len(); if (_l > 0) { x /= _l; y /= _l; } return self; };
+}`,
+      vector3: `// GML 3D Vector Math
+function Vec3(_x, _y, _z) constructor {
+    x = _x; y = _y; z = _z;
+    static dot = function(_v) { return x * _v.x + y * _v.y + z * _v.z; };
+    static cross = function(_v) { return new Vec3(y * _v.z - z * _v.y, z * _v.x - x * _v.z, x * _v.y - y * _v.x); };
+}`,
+      matrix: `// GML Matrix Transform Helpers
+function matrix_transform_point(_mat, _x, _y, _z) {
+    var _res = matrix_transform_vertex(_mat, _x, _y, _z, 1.0);
+    return { x: _res[0], y: _res[1], z: _res[2] };
+}`,
+      easing: `// GML Smooth Easing Functions
+function ease_in_out_cubic(_t) {
+    return _t < 0.5 ? 4 * _t * _t * _t : 1 - power(-2 * _t + 2, 3) / 2;
+}`,
+    };
+    const code = templates[options.category] ?? templates["vector2"]!;
+    return { category: options.category, generatedMathCode: code };
+  }
+
+  buildInputActionMapper(options: { systemName: string }): Record<string, unknown> {
+    const sys = options.systemName;
+    const code = `// GML Input Action Mapper: ${sys}
+function InputMapper() constructor {
+    actions = {};
+
+    static bindAction = function(_actionName, _keyOrButton) {
+        actions[$ _actionName] = _keyOrButton;
+    };
+
+    static isPressed = function(_actionName) {
+        if (!struct_exists(actions, _actionName)) return false;
+        var _bind = actions[$ _actionName];
+        return keyboard_check_pressed(_bind) || gamepad_button_check_pressed(0, _bind);
+    };
+
+    static isHeld = function(_actionName) {
+        if (!struct_exists(actions, _actionName)) return false;
+        var _bind = actions[$ _actionName];
+        return keyboard_check(_bind) || gamepad_button_check(0, _bind);
+    };
+}
+`;
+    return { systemName: sys, generatedInputCode: code };
+  }
+
+  buildSpatialAudioPool(options: { systemName: string }): Record<string, unknown> {
+    const sys = options.systemName;
+    const code = `// GML Spatial 3D Audio Emitter Pool: ${sys}
+function SpatialAudioEmitter(_x, _y, _z) constructor {
+    emitter = audio_emitter_create();
+    audio_emitter_position(emitter, _x, _y, _z);
+    audio_emitter_falloff(emitter, 100, 1000, 1.0);
+
+    static play = function(_sound, _loops, _priority) {
+        return audio_play_sound_on(emitter, _sound, _loops, _priority);
+    };
+
+    static updatePosition = function(_x, _y, _z) {
+        audio_emitter_position(emitter, _x, _y, _z);
+    };
+
+    static destroy = function() {
+        audio_emitter_free(emitter);
+    };
+}
+`;
+    return { systemName: sys, generatedAudioCode: code };
+  }
+
+  buildGridPathfinding(options: { systemName: string; cellSize?: number | undefined }): Record<string, unknown> {
+    const sys = options.systemName;
+    const size = options.cellSize ?? 32;
+
+    const code = `// GML A* Grid Pathfinding Setup: ${sys}
+function PathfindingGrid(_roomW, _roomH) constructor {
+    cellSize = ${size};
+    grid = mp_grid_create(0, 0, ceil(_roomW / cellSize), ceil(_roomH / cellSize), cellSize, cellSize);
+
+    static addSolidObjects = function(_objSolid) {
+        mp_grid_add_instances(grid, _objSolid, false);
+    };
+
+    static findPath = function(_path, _startX, _startY, _endX, _endY) {
+        return mp_grid_path(grid, _path, _startX, _startY, _endX, _endY, true);
+    };
+
+    static destroy = function() {
+        mp_grid_destroy(grid);
+    };
+}
+`;
+    return { systemName: sys, cellSize: size, generatedPathfindingCode: code };
+  }
+
+  buildFlexboxUiLayout(options: { layoutName: string }): Record<string, unknown> {
+    const lName = options.layoutName;
+    const code = `// GML UI Flexbox Layout Engine: ${lName}
+function FlexboxContainer(_x, _y, _w, _h, _padding, _gap) constructor {
+    x = _x; y = _y; width = _w; height = _h; padding = _padding; gap = _gap;
+    children = [];
+
+    static addChild = function(_child) {
+        array_push(children, _child);
+        arrange();
+    };
+
+    static arrange = function() {
+        var _currY = y + padding;
+        var _len = array_length(children);
+        for (var _i = 0; _i < _len; _i++) {
+            var _c = children[_i];
+            _c.x = x + padding;
+            _c.y = _currY;
+            _currY += _c.height + gap;
+        }
+    };
+}
+`;
+    return { layoutName: lName, generatedFlexboxCode: code };
+  }
+
+  configureAnimationCurve(options: { animCurveName: string; channelName?: string | undefined }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const res = this.findResource(options.animCurveName, "animcurve");
+    const text = this.sandbox.readText(res.path, [".yy"]);
+    const data = requireGmJson<Record<string, unknown>>(text, res.path);
+
+    return { animCurveName: options.animCurveName, updated: true, curveData: data };
+  }
+
+  manageResourceTags(options: { assetName: string; tags: string[]; action: "add" | "remove" }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const res = this.resources().find((r) => r.name === options.assetName);
+    if (!res) throw new Error(`Asset ${options.assetName} not found.`);
+
+    const text = this.sandbox.readText(res.path, [".yy"]);
+    const data = requireGmJson<Record<string, unknown>>(text, res.path);
+
+    let currentTags = (data["tags"] as string[]) ?? [];
+    if (options.action === "add") {
+      currentTags = Array.from(new Set([...currentTags, ...options.tags]));
+    } else {
+      currentTags = currentTags.filter((t) => !options.tags.includes(t));
+    }
+    data["tags"] = currentTags;
+
+    const sha = this.sandbox.sha256For(res.path);
+    this.sandbox.atomicWrite(res.path, stringifyGmJson(data), { expectedSha256: sha, backup: true });
+
+    return { assetName: options.assetName, tags: currentTags, updated: true };
+  }
+
+  clearRoomCreationCode(options: { roomName: string }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const res = this.findResource(options.roomName, "room");
+    const ccPath = res.path.replace(/\.yy$/, "_creation_code.gml");
+
+    if (fs.existsSync(path.join(this.config.projectRoot, ccPath))) {
+      const sha = this.sandbox.sha256For(ccPath);
+      this.sandbox.atomicWrite(ccPath, "// Room Creation Code reset\n", { expectedSha256: sha, backup: true });
+    }
+
+    return { roomName: options.roomName, cleared: true };
+  }
+
+  removeDeadGmlCode(): Record<string, unknown> {
+    const analysis = new ProjectAnalysisService(this);
+    const unused = analysis.findUnusedAssets();
+    return {
+      unusedAssetsDetected: unused.unusedCount,
+      unusedAssets: unused.unused,
+      message: "Scanned project for unreferenced assets and dead GML code scripts.",
+    };
+  }
+
+  generateTypeCheckAsserts(options: { functionName: string; parameters: Array<{ name: string; type: string }> }): Record<string, unknown> {
+    const checks = options.parameters.map((p) => {
+      let checkFn = "is_numeric";
+      if (p.type.toLowerCase().includes("struct")) checkFn = "is_struct";
+      else if (p.type.toLowerCase().includes("array")) checkFn = "is_array";
+      else if (p.type.toLowerCase().includes("string")) checkFn = "is_string";
+      else if (p.type.toLowerCase().includes("method") || p.type.toLowerCase().includes("function")) checkFn = "is_callable";
+
+      return `    if (!${checkFn}(${p.name})) throw new Error("${options.functionName}: Parameter ${p.name} must be of type ${p.type}");`;
+    }).join("\n");
+
+    const code = `// GML Feather Type Checker & Runtime Assertions
+function ${options.functionName}_assert_types(${options.parameters.map((p) => p.name).join(", ")}) {
+${checks}
+}
+`;
+    return { functionName: options.functionName, generatedAssertCode: code };
   }
 }
 

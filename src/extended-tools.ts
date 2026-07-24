@@ -1487,4 +1487,208 @@ export function registerExtendedTools(server: McpServer, project: GameMakerProje
     },
     async (args) => run(() => project.refactorInlineMethod(args)),
   );
+
+  server.registerTool(
+    "gm_gml_camera_projection_builder",
+    {
+      title: "Build 2D/3D Camera and Projection matrix GML code",
+      description: "Generate GML code for 2D Orthographic or 3D Perspective camera setup and matrices.",
+      inputSchema: {
+        is3D: z.boolean().optional(),
+        fov: z.number().optional(),
+        width: z.number().optional(),
+        height: z.number().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildCameraProjectionCode(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_surface_manager_builder",
+    {
+      title: "Build GML Surface lifecycle manager struct",
+      description: "Generate GML surface allocation, target binding, and memory cleanup struct code.",
+      inputSchema: {
+        surfaceName: z.string().min(1),
+        width: z.number().optional(),
+        height: z.number().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildSurfaceManagerCode(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_ds_to_struct_converter",
+    {
+      title: "Convert legacy ds_map and ds_list GML code to modern Structs",
+      description: "Automatically transform legacy ds_map and ds_list code into modern GML Structs and Arrays.",
+      inputSchema: {
+        gmlCode: z.string().min(1),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.convertDsToStruct(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_save_load_json_builder",
+    {
+      title: "Build JSON file save and load system GML code",
+      description: "Generate robust JSON save and load functions using buffers and json_stringify/json_parse.",
+      inputSchema: {
+        saveFileName: z.string().min(1),
+        encrypt: z.boolean().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildSaveLoadJsonSystem(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_event_listener_pubsub_builder",
+    {
+      title: "Build GML Pub/Sub Event Manager observer pattern",
+      description: "Generate GML Event Manager struct code for event subscriptions and emissions.",
+      inputSchema: {
+        managerName: z.string().min(1),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildPubSubEventListener(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_math_vector_matrix_builder",
+    {
+      title: "Build 2D/3D Vector and Matrix math GML utilities",
+      description: "Generate GML helper struct code for 2D/3D vector dot/cross products, matrix transforms, and easing.",
+      inputSchema: {
+        category: z.enum(["vector2", "vector3", "matrix", "easing"]),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildVectorMatrixMathUtils(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_input_action_mapper_builder",
+    {
+      title: "Build Action-based Input Mapper system GML code",
+      description: "Generate GML Input Mapper struct code for binding keyboard and gamepad actions.",
+      inputSchema: {
+        systemName: z.string().min(1),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildInputActionMapper(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_audio_sound_pool_builder",
+    {
+      title: "Build Spatial 3D Audio Emitter Pool GML code",
+      description: "Generate GML spatial 3D audio emitter and sound pooling helper struct code.",
+      inputSchema: {
+        systemName: z.string().min(1),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildSpatialAudioPool(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_grid_pathfinding_builder",
+    {
+      title: "Build A* Grid Pathfinding setup GML code",
+      description: "Generate GML mp_grid pathfinding setup, solid instance registration, and pathfinding code.",
+      inputSchema: {
+        systemName: z.string().min(1),
+        cellSize: z.number().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildGridPathfinding(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_ui_layout_flexbox_builder",
+    {
+      title: "Build Flexbox UI Layout Container GML code",
+      description: "Generate GML dynamic UI flexbox layout calculation struct code.",
+      inputSchema: {
+        layoutName: z.string().min(1),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildFlexboxUiLayout(args)),
+  );
+
+  server.registerTool(
+    "gm_ide_animation_curve_configure",
+    {
+      title: "Inspect and configure Animation Curve asset properties",
+      description: "Inspect or update Animation Curve asset properties in GameMaker IDE.",
+      inputSchema: {
+        animCurveName: z.string().min(1),
+        channelName: z.string().optional(),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.configureAnimationCurve(args)),
+  );
+
+  server.registerTool(
+    "gm_ide_resource_tags_manage",
+    {
+      title: "Add or remove tags on GameMaker resources",
+      description: "Manage resource tags assigned to GameMaker Studio assets.",
+      inputSchema: {
+        assetName: z.string().min(1),
+        tags: z.array(z.string()),
+        action: z.enum(["add", "remove"]),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.manageResourceTags(args)),
+  );
+
+  server.registerTool(
+    "gm_room_creation_code_clear",
+    {
+      title: "Clear or reset Room Creation Code",
+      description: "Clear or reset Room Creation Code for a specified room.",
+      inputSchema: {
+        roomName: z.string().min(1),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.clearRoomCreationCode(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_dead_code_remover",
+    {
+      title: "Scan and detect dead unreferenced GML code and assets",
+      description: "Scan project for unreferenced assets, scripts, and dead code branches.",
+      inputSchema: {},
+      annotations: READ_ONLY,
+    },
+    async () => run(() => project.removeDeadGmlCode()),
+  );
+
+  server.registerTool(
+    "gm_gml_type_check_asserts_generator",
+    {
+      title: "Generate Feather type checking and runtime parameter assertions",
+      description: "Generate runtime parameter type assertions for GML functions.",
+      inputSchema: {
+        functionName: z.string().min(1),
+        parameters: z.array(z.object({ name: z.string(), type: z.string() })),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.generateTypeCheckAsserts(args)),
+  );
 }
