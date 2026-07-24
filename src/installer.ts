@@ -209,8 +209,9 @@ export function writeClientConfig(
     }
 
     const isNpx = mcpIndexJsPath.includes("_npx") || mcpIndexJsPath.includes("npm-cache");
-    const command = isNpx ? (process.platform === "win32" ? "npx.cmd" : "npx") : (process.execPath || "node");
-    const args = isNpx ? ["-y", "-q", "gamemaker-mcp"] : [mcpIndexJsPath];
+    const isWin = process.platform === "win32";
+    const command = isNpx ? (isWin ? "cmd.exe" : "npx") : (process.execPath || "node");
+    const args = isNpx ? (isWin ? ["/c", "npx", "-y", "gamemaker-mcp"] : ["-y", "gamemaker-mcp"]) : [mcpIndexJsPath];
 
     (mcpServers as Record<string, unknown>)["gamemaker"] = {
       command,
