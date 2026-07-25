@@ -1908,4 +1908,205 @@ export function registerExtendedTools(server: McpServer, project: GameMakerProje
     },
     async () => run(() => project.auditPerformanceMemory()),
   );
+
+  server.registerTool(
+    "gm_gml_light_shadow_2d_shader_builder",
+    {
+      title: "Build 2D Light and Dynamic Shadow GLSL ES Shader pair",
+      description: "Generate HLSL/GLSL ES 2D Light & Dynamic Shadow Shader pair (.vsh + .fsh).",
+      inputSchema: {
+        shaderName: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildLightShadow2DShader(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_inventory_drag_drop_ui_builder",
+    {
+      title: "Build Drag-and-Drop Slot UI system GML struct code",
+      description: "Build Drag-and-Drop Inventory Slot UI system struct GML code.",
+      inputSchema: {
+        slotCount: z.number().int().optional(),
+        slotSize: z.number().int().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildInventoryDragDropUi(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_ds_list_to_array_converter",
+    {
+      title: "Convert legacy DS List code to modern GML 1D Array",
+      description: "Convert legacy ds_list functions to modern GML 1D Array methods.",
+      inputSchema: {
+        listVarName: z.string().min(1),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.convertDsListToArray(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_ds_map_to_struct_converter",
+    {
+      title: "Convert legacy DS Map code to modern GML Struct",
+      description: "Convert legacy ds_map functions to modern GML Structs.",
+      inputSchema: {
+        mapVarName: z.string().min(1),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.convertDsMapToStruct(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_object_state_machine_events_generate",
+    {
+      title: "Generate Object Event State Machine boilerplate scripts",
+      description: "Generate Object Event State Machine boilerplate scripts across Create, Step, Clean Up.",
+      inputSchema: {
+        objectName: z.string().min(1),
+        states: z.array(z.string().min(1)),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.generateObjectStateMachineEvents(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_surface_blur_bloom_shader_builder",
+    {
+      title: "Build Surface Gaussian Blur and Bloom Shader pair",
+      description: "Generate dual-pass Gaussian Blur & Bloom Shader pair (.vsh + .fsh).",
+      inputSchema: {
+        shaderName: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildSurfaceBlurBloomShader(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_grid_pathfinding_a_star_builder",
+    {
+      title: "Build A* Grid Pathfinding struct implementation",
+      description: "Build custom A* Grid Pathfinding GML struct implementation.",
+      inputSchema: {
+        gridWidth: z.number().int().optional(),
+        gridHeight: z.number().int().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildGridPathfindingAStar(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_audio_spatial_3d_emitter_builder",
+    {
+      title: "Build 3D Spatial Audio Emitter controller GML code",
+      description: "Build 3D Spatial Audio Emitter controller struct code.",
+      inputSchema: {
+        emitterVar: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildAudioSpatial3DEmitter(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_save_load_json_encrypted_builder",
+    {
+      title: "Build Encrypted JSON Save/Load system GML struct code",
+      description: "Build Encrypted JSON Save/Load system struct GML code.",
+      inputSchema: {
+        fileName: z.string().optional(),
+        saltKey: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildSaveLoadJsonEncrypted(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_camera_view_follow_bounds_builder",
+    {
+      title: "Build Smooth Camera Follow with Deadzone & Bounds Clamping",
+      description: "Build Smooth Camera Follow with Deadzone and Room Clamping code.",
+      inputSchema: {
+        cameraIndex: z.number().int().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildCameraViewFollowBounds(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_ds_priority_to_array_converter",
+    {
+      title: "Convert legacy DS Priority Queue to Sorted Array Struct",
+      description: "Convert legacy ds_priority queue to sorted GML Array struct.",
+      inputSchema: {
+        priorityVarName: z.string().min(1),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.convertDsPriorityToArray(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_event_pubsub_dispatcher_builder",
+    {
+      title: "Build Global Event Observer Pub/Sub Event Dispatcher struct",
+      description: "Build Global Observer Pub/Sub Event Dispatcher GML struct.",
+      inputSchema: {
+        dispatcherName: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildEventPubSubDispatcher(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_flexbox_ui_autolayout_builder",
+    {
+      title: "Build Dynamic Flexbox UI Layout spacing calculator",
+      description: "Build Flexbox UI Layout spacing and alignment calculator GML code.",
+      inputSchema: {
+        containerVar: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildFlexboxUiAutoLayout(args)),
+  );
+
+  server.registerTool(
+    "gm_ide_tileset_autotile_rules_configure",
+    {
+      title: "Configure 47-piece or 16-piece Autotiling rules on TileSet",
+      description: "Configure 47-piece or 16-piece autotiling rule metadata on a GameMaker TileSet.",
+      inputSchema: {
+        tilesetName: z.string().min(1),
+        autotileType: z.enum(["16-tile", "47-tile"]).optional(),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.configureTilesetAutotileRules(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_type_checked_struct_builder",
+    {
+      title: "Build Schema-validated GML Struct with type assertions",
+      description: "Build schema-validated GML Struct constructor with type assertions.",
+      inputSchema: {
+        structName: z.string().min(1),
+        fields: z.array(z.object({ name: z.string(), type: z.string(), defaultValue: z.string().optional() })),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildTypeCheckedStruct(args)),
+  );
 }

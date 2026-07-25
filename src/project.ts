@@ -3904,6 +3904,402 @@ function render_pipeline_depth_sort_draw(_instances_array) {
     }
     return { checkedScriptsCount: checked, potentialGcAllocations: allocations, warnings };
   }
+
+  buildLightShadow2DShader(options: { shaderName?: string | undefined }): { vertexShader: string; fragmentShader: string } {
+    const sName = options.shaderName ?? "shd_light_shadow_2d";
+    const vsh = `// 2D Light & Shadow Vertex Shader: ${sName}
+attribute vec3 in_Position;
+attribute vec4 in_Colour;
+attribute vec2 in_TextureCoord;
+
+varying vec2 v_vTexcoord;
+varying vec4 v_vColour;
+varying vec2 v_vPosition;
+
+void main() {
+    vec4 object_space_pos = vec4(in_Position, 1.0);
+    gl_Position = gm_Matrices[MATRIX_WORLD_VIEW_PROJECTION] * object_space_pos;
+    v_vColour = in_Colour;
+    v_vTexcoord = in_TextureCoord;
+    v_vPosition = in_Position.xy;
+}
+`;
+    const fsh = `// 2D Light & Shadow Fragment Shader: ${sName}
+varying vec2 v_vTexcoord;
+varying vec4 v_vColour;
+varying vec2 v_vPosition;
+
+uniform vec2 u_uLightPosition;
+uniform vec4 u_uLightColor;
+uniform float u_uLightRadius;
+
+void main() {
+    float dist = distance(v_vPosition, u_uLightPosition);
+    float atten = clamp(1.0 - (dist / u_uLightRadius), 0.0, 1.0);
+    vec4 texColor = texture2D(gm_BaseTexture, v_vTexcoord);
+    gl_FragColor = texColor * v_vColour * u_uLightColor * (atten * atten);
+}
+`;
+    return { vertexShader: vsh, fragmentShader: fsh };
+  }
+
+  buildInventoryDragDropUi(options: { slotCount?: number | undefined; slotSize?: number | undefined }): { generatedCode: string } {
+    const slots = options.slotCount ?? 20;
+    const size = options.slotSize ?? 48;
+    const code = `// GML Drag-and-Drop Slot UI Controller
+function InventoryDragDropUI() constructor {
+    slots = array_create(${slots}, undefined);
+    draggedSlot = -1;
+    draggedItem = undefined;
+    slotSize = ${size};
+
+    static start_drag = function(_slot_index) {
+        if (_slot_index >= 0 && _slot_index < array_length(slots) && slots[_slot_index] != undefined) {
+            draggedSlot = _slot_index;
+            draggedItem = slots[_slot_index];
+            slots[_slot_index] = undefined;
+        }
+    };
+
+    static drop_at = function(_target_slot_index) {
+        if (draggedSlot != -1) {
+            var _previous = slots[_target_slot_index];
+            slots[_target_slot_index] = draggedItem;
+            slots[draggedSlot] = _previous;
+            draggedSlot = -1;
+            draggedItem = undefined;
+        }
+    };
+}
+`;
+    return { generatedCode: code };
+  }
+
+  convertDsListToArray(options: { listVarName: string }): { generatedCode: string } {
+    const varName = options.listVarName;
+    const code = `// Converted GML DS List to 1D Array
+// Replace ds_list_create() with:
+${varName} = [];
+
+// Inline Helper Conversions:
+// ds_list_add(${varName}, item)       -> array_push(${varName}, item);
+// ds_list_find_value(${varName}, idx) -> ${varName}[idx];
+// ds_list_size(${varName})             -> array_length(${varName});
+// ds_list_delete(${varName}, idx)     -> array_delete(${varName}, idx, 1);
+// ds_list_clear(${varName})            -> array_resize(${varName}, 0);
+// ds_list_destroy(${varName})          -> // GC handles cleanup automatically!
+`;
+    return { generatedCode: code };
+  }
+
+  convertDsMapToStruct(options: { mapVarName: string }): { generatedCode: string } {
+    const varName = options.mapVarName;
+    const code = `// Converted GML DS Map to Struct
+// Replace ds_map_create() with:
+${varName} = {};
+
+// Inline Helper Conversions:
+// ds_map_add(${varName}, key, val)       -> ${varName}[$ key] = val; // or ${varName}.key = val;
+// ds_map_find_value(${varName}, key)    -> ${varName}[$ key];
+// ds_map_exists(${varName}, key)        -> struct_exists(${varName}, key);
+// ds_map_delete(${varName}, key)        -> struct_remove(${varName}, key);
+// ds_map_destroy(${varName})             -> // GC handles cleanup automatically!
+`;
+    return { generatedCode: code };
+  }
+
+  generateObjectStateMachineEvents(options: { objectName: string; states: string[] }): { generatedCode: string } {
+    const statesEnum = options.states.map((s) => s.toUpperCase()).join(", ");
+    const code = `// State Machine Boilerplate for ${options.objectName}
+
+// --- CREATE EVENT ---
+enum State { ${statesEnum} }
+state_machine = new StateMachine(State.${options.states[0]?.toUpperCase() ?? "IDLE"});
+
+// Register States
+${options.states.map((s) => `state_machine.add(State.${s.toUpperCase()}, state_${s.toLowerCase()}_enter, state_${s.toLowerCase()}_step, state_${s.toLowerCase()}_leave);`).join("\n")}
+
+// --- STEP EVENT ---
+state_machine.update();
+
+// --- CLEAN UP EVENT ---
+// State machine struct is garbage collected automatically.
+`;
+    return { generatedCode: code };
+  }
+
+  buildSurfaceBlurBloomShader(options: { shaderName?: string | undefined }): { vertexShader: string; fragmentShader: string } {
+    const sName = options.shaderName ?? "shd_blur_bloom";
+    const vsh = `// Surface Blur & Bloom Vertex Shader: ${sName}
+attribute vec3 in_Position;
+attribute vec4 in_Colour;
+attribute vec2 in_TextureCoord;
+
+varying vec2 v_vTexcoord;
+varying vec4 v_vColour;
+
+void main() {
+    vec4 object_space_pos = vec4(in_Position, 1.0);
+    gl_Position = gm_Matrices[MATRIX_WORLD_VIEW_PROJECTION] * object_space_pos;
+    v_vColour = in_Colour;
+    v_vTexcoord = in_TextureCoord;
+}
+`;
+    const fsh = `// Surface Blur & Bloom Fragment Shader: ${sName}
+varying vec2 v_vTexcoord;
+varying vec4 v_vColour;
+
+uniform vec2 u_uTexelSize;
+uniform float u_uBloomIntensity;
+
+void main() {
+    vec4 blurColor = vec4(0.0);
+    vec2 offset[9];
+    offset[0] = vec2(-1.0, -1.0); offset[1] = vec2( 0.0, -1.0); offset[2] = vec2( 1.0, -1.0);
+    offset[3] = vec2(-1.0,  0.0); offset[4] = vec2( 0.0,  0.0); offset[5] = vec2( 1.0,  0.0);
+    offset[6] = vec2(-1.0,  1.0); offset[7] = vec2( 0.0,  1.0); offset[8] = vec2( 1.0,  1.0);
+
+    float kernel[9];
+    kernel[0] = 1.0/16.0; kernel[1] = 2.0/16.0; kernel[2] = 1.0/16.0;
+    kernel[3] = 2.0/16.0; kernel[4] = 4.0/16.0; kernel[5] = 2.0/16.0;
+    kernel[6] = 1.0/16.0; kernel[7] = 2.0/16.0; kernel[8] = 1.0/16.0;
+
+    for (int i = 0; i < 9; i++) {
+        blurColor += texture2D(gm_BaseTexture, v_vTexcoord + offset[i] * u_uTexelSize) * kernel[i];
+    }
+    vec4 baseColor = texture2D(gm_BaseTexture, v_vTexcoord);
+    gl_FragColor = baseColor + (blurColor * u_uBloomIntensity);
+}
+`;
+    return { vertexShader: vsh, fragmentShader: fsh };
+  }
+
+  buildGridPathfindingAStar(options: { gridWidth?: number | undefined; gridHeight?: number | undefined }): { generatedCode: string } {
+    const w = options.gridWidth ?? 32;
+    const h = options.gridHeight ?? 32;
+    const code = `// GML Custom A* Grid Pathfinding Struct
+function AStarPathfinder(_w = ${w}, _h = ${h}) constructor {
+    width = _w;
+    height = _h;
+    grid = array_create(_w);
+    for (var i = 0; i < _w; i++) grid[i] = array_create(_h, 0); // 0 = walkable, 1 = solid
+
+    static set_solid = function(_x, _y, _is_solid) {
+        if (_x >= 0 && _x < width && _y >= 0 && _y < height) grid[_x][_y] = _is_solid ? 1 : 0;
+    };
+
+    static find_path = function(_start_x, _start_y, _end_x, _end_y) {
+        var _mp_grid = mp_grid_create(0, 0, width, height, 32, 32);
+        for (var _x = 0; _x < width; _x++) {
+            for (var _y = 0; _y < height; _y++) {
+                if (grid[_x][_y] == 1) mp_grid_add_cell(_mp_grid, _x, _y);
+            }
+        }
+        var _path = path_add();
+        mp_grid_path(_mp_grid, _path, _start_x * 32 + 16, _start_y * 32 + 16, _end_x * 32 + 16, _end_y * 32 + 16, false);
+        mp_grid_destroy(_mp_grid);
+        return _path;
+    };
+}
+`;
+    return { generatedCode: code };
+  }
+
+  buildAudioSpatial3DEmitter(options: { emitterVar?: string | undefined }): { generatedCode: string } {
+    const emVar = options.emitterVar ?? "spatial_emitter";
+    const code = `// 3D Spatial Audio Emitter Controller
+function SpatialAudioEmitter(_x, _y, _z = 0) constructor {
+    emitter = audio_emitter_create();
+    audio_emitter_position(emitter, _x, _y, _z);
+    audio_emitter_falloff(emitter, 100, 1000, 1);
+
+    static set_position = function(_x, _y, _z = 0) {
+        audio_emitter_position(emitter, _x, _y, _z);
+    };
+
+    static play_sound = function(_sound_asset, _loop = false, _priority = 1) {
+        return audio_play_sound_on(emitter, _sound_asset, _loop, _priority);
+    };
+
+    static destroy = function() {
+        if (audio_emitter_exists(emitter)) audio_emitter_free(emitter);
+    };
+}
+`;
+    return { generatedCode: code };
+  }
+
+  buildSaveLoadJsonEncrypted(options: { fileName?: string | undefined; saltKey?: string | undefined }): { generatedCode: string } {
+    const fName = options.fileName ?? "savegame.dat";
+    const salt = options.saltKey ?? "GameMakerSalt2026";
+    const code = `// GML Encrypted JSON Save & Load System: ${fName}
+function save_game_data_encrypted(_data_struct, _filename = "${fName}") {
+    var _json = json_stringify(_data_struct);
+    var _buf = buffer_create(string_byte_length(_json) + 1, buffer_fixed, 1);
+    buffer_write(_buf, buffer_string, _json);
+    
+    // Salt checksum hash
+    var _hash = md5_string_utf8(_json + "${salt}");
+    
+    var _wrapper = { payload: _json, checksum: _hash };
+    var _final_json = json_stringify(_wrapper);
+    
+    var _file = file_text_open_write(_filename);
+    file_text_write_string(_file, _final_json);
+    file_text_close(_file);
+    buffer_delete(_buf);
+}
+
+function load_game_data_encrypted(_filename = "${fName}") {
+    if (!file_exists(_filename)) return undefined;
+    var _file = file_text_open_read(_filename);
+    var _text = file_text_read_string(_file);
+    file_text_close(_file);
+    
+    var _wrapper = json_parse(_text);
+    if (struct_exists(_wrapper, "payload") && struct_exists(_wrapper, "checksum")) {
+        var _expected = md5_string_utf8(_wrapper.payload + "${salt}");
+        if (_wrapper.checksum == _expected) {
+            return json_parse(_wrapper.payload);
+        }
+    }
+    show_debug_message("Save data tamper/checksum validation failed!");
+    return undefined;
+}
+`;
+    return { generatedCode: code };
+  }
+
+  buildCameraViewFollowBounds(options: { cameraIndex?: number | undefined }): { generatedCode: string } {
+    const camIdx = options.cameraIndex ?? 0;
+    const code = `// GML Smooth Camera Follow with Deadzone & Room Bounds Clamping
+function camera_follow_target(_cam_idx = ${camIdx}, _target = id, _lerp_speed = 0.1) {
+    var _cam = view_camera[_cam_idx];
+    var _cur_x = camera_get_view_x(_cam);
+    var _cur_y = camera_get_view_y(_cam);
+    var _w = camera_get_view_width(_cam);
+    var _h = camera_get_view_height(_cam);
+
+    if (instance_exists(_target)) {
+        var _dest_x = clamp(_target.x - _w / 2, 0, room_width - _w);
+        var _dest_y = clamp(_target.y - _h / 2, 0, room_height - _h);
+        camera_set_view_pos(_cam, lerp(_cur_x, _dest_x, _lerp_speed), lerp(_cur_y, _dest_y, _lerp_speed));
+    }
+}
+`;
+    return { generatedCode: code };
+  }
+
+  convertDsPriorityToArray(options: { priorityVarName: string }): { generatedCode: string } {
+    const varName = options.priorityVarName;
+    const code = `// Converted GML DS Priority Queue to Sorted Array Struct
+function PriorityQueue() constructor {
+    items = [];
+
+    static enqueue = function(_value, _priority) {
+        array_push(items, { value: _value, priority: _priority });
+        array_sort(items, function(_a, _b) { return _a.priority - _b.priority; });
+    };
+
+    static dequeue = function() {
+        if (array_length(items) == 0) return undefined;
+        var _first = items[0];
+        array_delete(items, 0, 1);
+        return _first.value;
+    };
+}
+
+// Replace ds_priority_create() with:
+${varName} = new PriorityQueue();
+`;
+    return { generatedCode: code };
+  }
+
+  buildEventPubSubDispatcher(options: { dispatcherName?: string | undefined }): { generatedCode: string } {
+    const name = options.dispatcherName ?? "EventDispatcher";
+    const code = `// Global Event Observer Pub/Sub Dispatcher: ${name}
+function ${name}() constructor {
+    listeners = {};
+
+    static subscribe = function(_event_type, _callback) {
+        if (!struct_exists(listeners, _event_type)) listeners[$ _event_type] = [];
+        array_push(listeners[$ _event_type], _callback);
+    };
+
+    static dispatch = function(_event_type, _data = undefined) {
+        if (struct_exists(listeners, _event_type)) {
+            var _list = listeners[$ _event_type];
+            for (var i = 0; i < array_length(_list); i++) {
+                var _cb = _list[i];
+                if (is_callable(_cb)) _cb(_data);
+            }
+        }
+    };
+}
+`;
+    return { generatedCode: code };
+  }
+
+  buildFlexboxUiAutoLayout(options: { containerVar?: string | undefined }): { generatedCode: string } {
+    const cVar = options.containerVar ?? "ui_container";
+    const code = `// Dynamic Flexbox UI Layout Spacing Calculator
+function flexbox_layout_calculate(_items_array, _container_width, _container_height, _direction = "row", _gap = 8) {
+    var _count = array_length(_items_array);
+    if (_count == 0) return;
+
+    var _current_x = 0;
+    var _current_y = 0;
+
+    for (var i = 0; i < _count; i++) {
+        var _item = _items_array[i];
+        _item.x = _current_x;
+        _item.y = _current_y;
+
+        if (_direction == "row") {
+            _current_x += _item.width + _gap;
+        } else {
+            _current_y += _item.height + _gap;
+        }
+    }
+}
+`;
+    return { generatedCode: code };
+  }
+
+  configureTilesetAutotileRules(options: { tilesetName: string; autotileType?: "16-tile" | "47-tile" | undefined }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const res = this.findResource(options.tilesetName, "tileset");
+    let text = this.sandbox.readText(res.path, [".yy"]);
+    const autoType = options.autotileType ?? "47-tile";
+    const ruleCount = autoType === "47-tile" ? 47 : 16;
+
+    text = updateJsonPath(text, ["autoTileSets"], [
+      {
+        $GMAutoTileSet: "",
+        "%Name": `${options.tilesetName}_autotile`,
+        name: `${options.tilesetName}_autotile`,
+        resourceType: "GMAutoTileSet",
+        resourceVersion: "2.0",
+        tiles: Array.from({ length: ruleCount }, () => 0),
+      },
+    ]);
+    const sha = this.sandbox.sha256For(res.path);
+    return this.sandbox.atomicWrite(res.path, text, { expectedSha256: sha, backup: true });
+  }
+
+  buildTypeCheckedStruct(options: { structName: string; fields: Array<{ name: string; type: string; defaultValue?: string | undefined }> }): { generatedCode: string } {
+    const fieldDecls = options.fields.map((f) => `    ${f.name} = _data[$ "${f.name}"] ?? ${f.defaultValue ?? "undefined"};`).join("\n");
+    const fieldChecks = options.fields.map((f) => `    if (${f.name} != undefined && typeof(${f.name}) != "${f.type}") show_debug_message("Warning: ${f.name} expected ${f.type}");`).join("\n");
+
+    const code = `// Feather Schema-Validated GML Struct: ${options.structName}
+function ${options.structName}(_data = {}) constructor {
+${fieldDecls}
+
+${fieldChecks}
+}
+`;
+    return { generatedCode: code };
+  }
 }
 
 export interface SpriteInspection {

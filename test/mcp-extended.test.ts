@@ -184,6 +184,21 @@ const EXPECTED_TOOLS = [
   "gm_gml_render_pipeline_depth_sort_builder",
   "gm_ide_room_instance_batch_add",
   "gm_gml_performance_memory_audit",
+  "gm_gml_light_shadow_2d_shader_builder",
+  "gm_gml_inventory_drag_drop_ui_builder",
+  "gm_gml_ds_list_to_array_converter",
+  "gm_gml_ds_map_to_struct_converter",
+  "gm_gml_object_state_machine_events_generate",
+  "gm_gml_surface_blur_bloom_shader_builder",
+  "gm_gml_grid_pathfinding_a_star_builder",
+  "gm_gml_audio_spatial_3d_emitter_builder",
+  "gm_gml_save_load_json_encrypted_builder",
+  "gm_gml_camera_view_follow_bounds_builder",
+  "gm_gml_ds_priority_to_array_converter",
+  "gm_gml_event_pubsub_dispatcher_builder",
+  "gm_gml_flexbox_ui_autolayout_builder",
+  "gm_ide_tileset_autotile_rules_configure",
+  "gm_gml_type_checked_struct_builder",
 ] as const;
 
 test("stdio MCP exposes the complete extended GameMaker toolset", async () => {
