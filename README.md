@@ -43,7 +43,7 @@ npx gamemaker-mcp@latest connect all
 ```
 
 **How it works**:
-Open any GameMaker project folder in **Claude Desktop**, **Google Antigravity**, **Cursor**, **Codex**, or **Qwen Code**. The server automatically discovers and connects to your `.yyp` project file in the workspace directory!
+Open any GameMaker project folder in any of the 20 supported AI clients (Claude Desktop, Google Antigravity, Cursor, VS Code, Windsurf, GitHub Copilot, Codex, Cline, etc.). The server automatically discovers and connects to your `.yyp` project file in the workspace directory dynamically at runtime without requiring a server restart!
 
 ---
 
@@ -60,7 +60,7 @@ What this command does automatically:
 2. Auto-detects installed **GameMaker Studio runtimes** & `Igor.exe`.
 3. Validates your GameMaker `.yyp` project structure.
 4. Generates a local `mcp-config.json` in your project directory.
-5. Automatically configures and connects **Claude Desktop**, **Google Antigravity**, **Cursor**, **Codex**, and **Qwen Code**.
+5. Automatically configures and connects **all 20 supported AI clients and IDEs** (Amp, Antigravity, Claude, Cline, Codex, Copilot, Cursor, Factory, Gemini CLI, Goose, Grok, Junie, Kiro, LM Studio, opencode, Qodo, Qwen, VS Code, Warp, Windsurf).
 
 ---
 
@@ -78,13 +78,15 @@ Then run commands from any terminal or PowerShell:
 # Full automatic setup for a project:
 gamemaker-mcp install "C:\Projects\MyGame\MyGame.yyp"
 
-# Verify environment, runtime, and client connection status:
+# Verify environment, runtime, and connection status for all 20 clients:
 gamemaker-mcp doctor "C:\Projects\MyGame\MyGame.yyp"
 
-# Connect a specific AI client (claude | antigravity | cursor | codex | qwen | all):
+# Connect a specific AI client (claude | antigravity | cursor | codex | qwen | vscode | windsurf | copilot | all):
 gamemaker-mcp connect antigravity
 gamemaker-mcp connect claude
-gamemaker-mcp connect qwen
+gamemaker-mcp connect vscode
+gamemaker-mcp connect cursor
+gamemaker-mcp connect all
 ```
 
 ---
@@ -337,18 +339,28 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 - `gamemaker://snapshots` — List of recorded project integrity snapshots.
 - `gamemaker://jobs/history` — History of Igor build and package jobs.
 
-### Workflow Prompts (10)
+### Workflow Prompts (20)
 
+- `audit-gamemaker-project`: Run a read-only structural, GML, shader, dependency, and statistics audit.
+- `debug-gamemaker-build`: Use the persistent background job workflow to diagnose project build errors.
+- `safe-gamemaker-refactor`: Snapshot, inspect references, preview patches, edit with hashes, validate, and compile.
+- `implement-gamemaker-shader-effect`: Inspect and update a shader with cross-stage validation and a build check.
+- `restore-gamemaker-snapshot`: Inspect a snapshot and request explicit confirmation before destructive restoration.
 - `create-state-machine`: Generate a robust, clean state machine pattern for GameMaker objects.
-- `optimize-draw-events`: Audit and optimize Draw events for maximum FPS.
-- `refactor-gml-script`: Clean up, modernize, and add Feather JSDoc headers to GML scripts.
-- `add-object-event`: Step-by-step guidance for adding and configuring object events safely.
-- `create-script`: Scaffold a new script with strict Feather JSDoc headers.
-- `create-shader`: Scaffold a vertex/fragment GLSL ES shader pair.
-- `inspect-room`: Detailed analysis of room settings, layers, and instances.
-- `analyze-project`: Complete diagnostic review of project health and architecture.
-- `create-snapshot`: Safety workflow before performing multi-file refactoring.
-- `repair-project`: Diagnostic and repair guide for broken resource references.
+- `optimize-draw-events`: Audit and optimize Draw events for batching, texture swaps, and state resets.
+- `refactor-gml-script`: Refactor legacy argument0..15 scripts to modern GML 2024+ syntax and Feather JSDoc.
+- `write-clean-gml-script`: Generate Feather-compliant, memory-optimized GML script with constructors and static methods.
+- `write-gml-unit-test`: Create GML unit test suite, add assertion checks, and run them using the test framework.
+- `build-2d-lighting-system`: Generate a complete 2D light raycaster, shadow caster struct, and shader pair.
+- `setup-inventory-system`: Generate inventory database struct, slot UI controller, and save/load persistence.
+- `convert-legacy-ds-structures`: Audit and convert legacy ds_list, ds_map, ds_grid, and ds_priority to GML 2D arrays & structs.
+- `setup-ai-behavior-tree`: Build AI Selector, Sequence, and Action nodes for NPC/enemy decision making.
+- `setup-localization-csv-i18n`: Scan project for hardcoded UI text strings, generate localization dictionary, and build translator.
+- `audit-gc-memory-leaks`: Scan GML scripts for per-frame dynamic array/struct/DS allocations in step and draw events.
+- `setup-encrypted-save-system`: Build encrypted JSON save/load state system with MD5/salt tamper checksums.
+- `setup-isometric-depth-sorting`: Build 2.5D isometric depth sorting render pipeline code with Z-buffer toggles.
+- `setup-branching-dialogue-tree`: Generate node-based dialogue tree struct system with choice branching and callback triggers.
+- `setup-multiplayer-packet-buffers`: Build binary GameMaker buffer encoder/decoder struct code for multiplayer network packets.
 
 ## Recommended workflow
 
