@@ -180,12 +180,127 @@ export function getSupportedClients(projectDir?: string): ClientTarget[] {
     path.join(pDir, ".qwen", "mcp.json"),
   ];
 
+  const ampPaths = [
+    path.join(home, ".amp", "mcp.json"),
+    path.join(home, ".config", "amp", "mcp.json"),
+    path.join(pDir, ".amp", "mcp.json"),
+  ];
+
+  const clinePaths = [
+    isWin
+      ? path.join(appData, "Code", "User", "globalStorage", "saoudrizwan.claude-dev", "settings", "cline_mcp_settings.json")
+      : isMac
+      ? path.join(home, "Library", "Application Support", "Code", "User", "globalStorage", "saoudrizwan.claude-dev", "settings", "cline_mcp_settings.json")
+      : path.join(home, ".config", "Code", "User", "globalStorage", "saoudrizwan.claude-dev", "settings", "cline_mcp_settings.json"),
+    path.join(pDir, ".cline", "mcp.json"),
+  ];
+
+  const copilotPaths = [
+    path.join(home, ".copilot", "mcp.json"),
+    isWin
+      ? path.join(appData, "GitHub Copilot", "mcp.json")
+      : path.join(home, ".config", "github-copilot", "mcp.json"),
+    path.join(pDir, ".copilot", "mcp.json"),
+  ];
+
+  const factoryPaths = [
+    path.join(home, ".factory", "mcp.json"),
+    path.join(pDir, ".factory", "mcp.json"),
+  ];
+
+  const geminiPaths = [
+    path.join(home, ".gemini", "mcp.json"),
+    path.join(home, ".config", "gemini", "mcp.json"),
+    path.join(pDir, ".gemini", "mcp.json"),
+  ];
+
+  const goosePaths = [
+    path.join(home, ".config", "goose", "mcp.json"),
+    isWin
+      ? path.join(appData, "Block", "Goose", "mcp.json")
+      : path.join(home, ".config", "goose", "mcp.json"),
+    path.join(pDir, ".goose", "mcp.json"),
+  ];
+
+  const grokPaths = [
+    path.join(home, ".grok", "mcp.json"),
+    path.join(pDir, ".grok", "mcp.json"),
+  ];
+
+  const juniePaths = [
+    path.join(home, ".junie", "mcp.json"),
+    path.join(pDir, ".junie", "mcp.json"),
+  ];
+
+  const kiroPaths = [
+    path.join(home, ".kiro", "mcp.json"),
+    path.join(pDir, ".kiro", "mcp.json"),
+  ];
+
+  const lmstudioPaths = [
+    path.join(home, ".lmstudio", "mcp.json"),
+    isWin
+      ? path.join(appData, "LM-Studio", "mcp.json")
+      : path.join(home, ".cache", "lm-studio", "mcp.json"),
+    path.join(pDir, ".lmstudio", "mcp.json"),
+  ];
+
+  const opencodePaths = [
+    path.join(home, ".opencode", "mcp.json"),
+    path.join(pDir, ".opencode", "mcp.json"),
+  ];
+
+  const qodoPaths = [
+    path.join(home, ".qodo", "mcp.json"),
+    path.join(pDir, ".qodo", "mcp.json"),
+  ];
+
+  const vscodePaths = [
+    isWin
+      ? path.join(appData, "Code", "User", "globalStorage", "mcp.json")
+      : isMac
+      ? path.join(home, "Library", "Application Support", "Code", "User", "globalStorage", "mcp.json")
+      : path.join(home, ".config", "Code", "User", "globalStorage", "mcp.json"),
+    path.join(pDir, ".vscode", "mcp.json"),
+  ];
+
+  const warpPaths = [
+    path.join(home, ".warp", "mcp.json"),
+    path.join(home, ".config", "warp-terminal", "mcp.json"),
+    path.join(pDir, ".warp", "mcp.json"),
+  ];
+
+  const windsurfPaths = [
+    isWin
+      ? path.join(appData, "Windsurf", "User", "globalStorage", "mcp.json")
+      : isMac
+      ? path.join(home, "Library", "Application Support", "Windsurf", "User", "globalStorage", "mcp.json")
+      : path.join(home, ".config", "Windsurf", "User", "globalStorage", "mcp.json"),
+    path.join(home, ".codeium", "windsurf", "mcp_config.json"),
+    path.join(pDir, ".windsurf", "mcp.json"),
+  ];
+
   return [
-    { name: "Claude Code / Desktop", id: "claude", paths: claudePaths },
+    { name: "Amp", id: "amp", paths: ampPaths },
     { name: "Google Antigravity", id: "antigravity", paths: antigravityPaths },
+    { name: "Claude Code / Desktop", id: "claude", paths: claudePaths },
+    { name: "Cline", id: "cline", paths: clinePaths },
     { name: "Codex", id: "codex", paths: codexPaths },
+    { name: "GitHub Copilot", id: "copilot", paths: copilotPaths },
     { name: "Cursor", id: "cursor", paths: cursorPaths },
-    { name: "Qwen Code / CLI", id: "qwen", paths: qwenPaths },
+    { name: "Factory", id: "factory", paths: factoryPaths },
+    { name: "Gemini CLI", id: "gemini", paths: geminiPaths },
+    { name: "Goose", id: "goose", paths: goosePaths },
+    { name: "Grok", id: "grok", paths: grokPaths },
+    { name: "Junie", id: "junie", paths: juniePaths },
+    { name: "Kiro", id: "kiro", paths: kiroPaths },
+    { name: "LM Studio", id: "lmstudio", paths: lmstudioPaths },
+    { name: "opencode", id: "opencode", paths: opencodePaths },
+    { name: "Qodo Gen / Qwen", id: "qwen", paths: qwenPaths },
+    { name: "Qodo Gen", id: "qodo", paths: qodoPaths },
+    { name: "VS Code", id: "vscode", paths: vscodePaths },
+    { name: "Warp", id: "warp", paths: warpPaths },
+    { name: "Windsurf", id: "windsurf", paths: windsurfPaths },
   ];
 }
 
@@ -358,7 +473,7 @@ export function runConnect(clientId: string, projectArg?: string): void {
     : clients.filter((c) => c.id.toLowerCase() === clientId.toLowerCase());
 
   if (targetClients.length === 0) {
-    console.error(`❌ Unknown client '${clientId}'. Available clients: claude, antigravity, codex, cursor, qwen, all`);
+    console.error(`❌ Unknown client '${clientId}'. Available clients: ${clients.map((c) => c.id).join(", ")}, all`);
     process.exit(1);
   }
 

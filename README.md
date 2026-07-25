@@ -13,7 +13,7 @@ The server uses the stable `@modelcontextprotocol/sdk` v1 line over `stdio`. It 
 
 - 190 MCP tools, 20 reusable workflow prompts, and 6 project resources;
 - zero-config workspace auto-detection (open any GameMaker project folder in your AI client);
-- CLI installer & manager (`gamemaker-mcp install`, `doctor`, `connect`);
+- CLI installer & manager (`gamemaker-mcp install`, `doctor`, `connect`) supporting 20 AI clients & IDEs (Amp, Antigravity, Claude, Cline, Codex, Copilot, Cursor, Factory, Gemini CLI, Goose, Grok, Junie, Kiro, LM Studio, opencode, Qodo, Qwen, VS Code, Warp, Windsurf);
 - tolerant parsing of GameMaker `.yyp`/`.yy` JSON-like files, including trailing commas;
 - project, asset, room, object-event, object-inheritance, sprite, sound, sequence, font, tileset, animation curve, timeline, included data files, audio/texture groups, and shader inspection;
 - GML symbol/complexity diagnostics, FPS profiler, i18n scanner, draw state auditor, health score (0-100%), object hierarchy tree, doc exporter, state machine visualizer, dead GML code detector, global variable scanner, physics auditor, asset cross-referencer, and duplicate code finder;
