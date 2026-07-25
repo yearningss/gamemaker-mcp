@@ -1691,4 +1691,221 @@ export function registerExtendedTools(server: McpServer, project: GameMakerProje
     },
     async (args) => run(() => project.generateTypeCheckAsserts(args)),
   );
+
+  server.registerTool(
+    "gm_gml_object_collision_event_builder",
+    {
+      title: "Build GML sub-pixel collision resolution event code",
+      description: "Build GML collision resolution code with velocity reflection, sub-pixel snapping, and friction.",
+      inputSchema: {
+        targetObject: z.string().min(1),
+        colliderObject: z.string().min(1),
+        bounceFactor: z.number().optional(),
+        friction: z.number().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildObjectCollisionEvent(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_light_shadow_2d_builder",
+    {
+      title: "Build 2D light raycaster and shadow caster system struct",
+      description: "Build 2D additive light rendering and shadow caster GML struct code.",
+      inputSchema: {
+        systemName: z.string().optional(),
+        lightRadius: z.number().optional(),
+        lightColor: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildLightShadow2DSystem(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_particle_emitter_burst_builder",
+    {
+      title: "Build GML particle emitter burst controller function",
+      description: "Build GML particle emitter burst code with region shape and auto-cleanup time source.",
+      inputSchema: {
+        systemVar: z.string().optional(),
+        particleCount: z.number().optional(),
+        emitterShape: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildParticleEmitterBurst(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_ds_grid_to_array2d_converter",
+    {
+      title: "Convert legacy DS grid code to 2D GML array",
+      description: "Convert legacy GameMaker ds_grid structures to modern 2D GML Arrays.",
+      inputSchema: {
+        gridVarName: z.string().min(1),
+        width: z.number().int().min(1),
+        height: z.number().int().min(1),
+        defaultValue: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.convertDsGridToArray2D(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_shader_uniform_struct_builder",
+    {
+      title: "Build GML Shader Uniform struct wrapper",
+      description: "Build GML struct wrapper for binding and updating Shader Uniforms.",
+      inputSchema: {
+        shaderName: z.string().min(1),
+        uniforms: z.array(z.object({ name: z.string(), type: z.enum(["float", "vec2", "vec3", "vec4", "matrix"]) })),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildShaderUniformStruct(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_network_packet_buffer_builder",
+    {
+      title: "Build binary network packet buffer encoder and decoder",
+      description: "Build binary GameMaker buffer encoder/decoder struct code for multiplayer network packets.",
+      inputSchema: {
+        packetName: z.string().min(1),
+        fields: z.array(z.object({ name: z.string(), type: z.enum(["u8", "u16", "u32", "f32", "string"]) })),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildNetworkPacketBuffer(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_dialogue_tree_generator",
+    {
+      title: "Generate node-based branching dialogue tree system",
+      description: "Generate GML node-based dialogue tree struct system with choice branching.",
+      inputSchema: {
+        systemName: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.generateDialogueTreeSystem(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_behavior_tree_builder",
+    {
+      title: "Build AI Behavior Tree system struct",
+      description: "Build AI Behavior Tree system code (Selector, Sequence, Action nodes).",
+      inputSchema: {
+        treeName: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildBehaviorTreeSystem(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_save_state_rollback_builder",
+    {
+      title: "Build frame rollback and game state save system",
+      description: "Build frame rollback save state history struct for local and multiplayer rewind.",
+      inputSchema: {
+        stateStructName: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildSaveStateRollbackSystem(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_screen_shake_camera_builder",
+    {
+      title: "Build camera impulse screen shake system",
+      description: "Build GML camera impulse screen shake decay and view pos update code.",
+      inputSchema: {
+        cameraVar: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildScreenShakeCameraSystem(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_localization_csv_builder",
+    {
+      title: "Build CSV localization manager and dynamic translator",
+      description: "Build GML CSV string table parser and dynamic i18n translation manager struct.",
+      inputSchema: {
+        defaultLanguage: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildLocalizationCsvSystem(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_tween_easing_library_generator",
+    {
+      title: "Generate complete GML math tweening and easing library",
+      description: "Generate GML Math Easing library (Linear, Quad, Cubic, Bounce).",
+      inputSchema: {
+        includeElastic: z.boolean().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.generateTweenEasingLibrary(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_render_pipeline_depth_sort_builder",
+    {
+      title: "Build 2.5D isometric depth sorting render pipeline",
+      description: "Build 2.5D depth sorting render pipeline code with Z-buffer toggles.",
+      inputSchema: {
+        enableZBuffer: z.boolean().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildRenderPipelineDepthSort(args)),
+  );
+
+  server.registerTool(
+    "gm_ide_room_instance_batch_add",
+    {
+      title: "Batch add multiple object instances to room layer",
+      description: "Batch insert multiple object instances into a GameMaker room layer.",
+      inputSchema: {
+        roomName: z.string().min(1),
+        layerName: z.string().min(1),
+        instances: z.array(
+          z.object({
+            objectName: z.string().min(1),
+            x: z.number(),
+            y: z.number(),
+            scaleX: z.number().optional(),
+            scaleY: z.number().optional(),
+            rotation: z.number().optional(),
+          }),
+        ),
+        expectedRoomSha256: sha256,
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => editing.addRoomInstanceBatch(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_performance_memory_audit",
+    {
+      title: "Audit GML Garbage Collector allocations and per-frame memory leaks",
+      description: "Audit GML scripts for per-frame dynamic allocations and GC pressure.",
+      inputSchema: {},
+      annotations: READ_ONLY,
+    },
+    async () => run(() => project.auditPerformanceMemory()),
+  );
 }

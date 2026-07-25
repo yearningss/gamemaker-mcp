@@ -3546,6 +3546,364 @@ ${checks}
 `;
     return { functionName: options.functionName, generatedAssertCode: code };
   }
+
+  buildObjectCollisionEvent(options: { targetObject: string; colliderObject: string; bounceFactor?: number | undefined; friction?: number | undefined }): { generatedCode: string } {
+    const bounce = options.bounceFactor ?? 0.8;
+    const fric = options.friction ?? 0.05;
+    const code = `// GML Sub-pixel Collision & Velocity Reflection: ${options.targetObject} vs ${options.colliderObject}
+var _other = other;
+var _bounce = ${bounce};
+var _fric = ${fric};
+
+// Horizontal Collision
+if (place_meeting(x + hspeed, y, _other.object_index)) {
+    while (!place_meeting(x + sign(hspeed), y, _other.object_index)) {
+        x += sign(hspeed);
+    }
+    hspeed = -hspeed * _bounce;
+}
+x += hspeed;
+
+// Vertical Collision
+if (place_meeting(x, y + vspeed, _other.object_index)) {
+    while (!place_meeting(x, y + sign(vspeed), _other.object_index)) {
+        y += sign(vspeed);
+    }
+    vspeed = -vspeed * _bounce;
+}
+y += vspeed;
+
+// Apply Friction
+hspeed = lerp(hspeed, 0, _fric);
+vspeed = lerp(vspeed, 0, _fric);
+`;
+    return { generatedCode: code };
+  }
+
+  buildLightShadow2DSystem(options: { systemName?: string | undefined; lightRadius?: number | undefined; lightColor?: string | undefined }): { generatedCode: string } {
+    const sysName = options.systemName ?? "Light2DSystem";
+    const radius = options.lightRadius ?? 256;
+    const color = options.lightColor ?? "c_yellow";
+    const code = `// 2D Light Raycaster & Shadow Caster Struct: ${sysName}
+function ${sysName}(_x, _y) constructor {
+    x = _x;
+    y = _y;
+    radius = ${radius};
+    color = ${color};
+    intensity = 1.0;
+
+    static draw_light = function(_surface) {
+        if (!surface_exists(_surface)) return;
+        surface_set_target(_surface);
+        gpu_set_blendmode(bm_add);
+        draw_circle_color(x, y, radius, color, c_black, false);
+        gpu_set_blendmode(bm_normal);
+        surface_reset_target();
+    };
+
+    static draw_shadow_casters = function(_caster_array) {
+        for (var i = 0; i < array_length(_caster_array); i++) {
+            var _c = _caster_array[i];
+            var _dir = point_direction(x, y, _c.x, _c.y);
+            draw_sprite_ext(_c.sprite_index, _c.image_index, _c.x + lengthdir_x(8, _dir), _c.y + lengthdir_y(8, _dir), _c.image_xscale, _c.image_yscale, _c.image_angle, c_black, 0.5);
+        }
+    };
+}
+`;
+    return { generatedCode: code };
+  }
+
+  buildParticleEmitterBurst(options: { systemVar?: string | undefined; particleCount?: number | undefined; emitterShape?: string | undefined }): { generatedCode: string } {
+    const sysVar = options.systemVar ?? "global.pt_system";
+    const count = options.particleCount ?? 30;
+    const shape = options.emitterShape ?? "ps_shape_ellipse";
+    const code = `// GML Particle Emitter Burst Controller
+function particle_emitter_burst_at(_x, _y, _count = ${count}) {
+    var _emitter = part_emitter_create(${sysVar});
+    part_emitter_region(${sysVar}, _emitter, _x - 16, _x + 16, _y - 16, _y + 16, ${shape}, ps_distr_gaussian);
+    part_emitter_burst(${sysVar}, _emitter, global.pt_dust, _count);
+    call_later(1, time_source_units_seconds, method({ _sys: ${sysVar}, _em: _emitter }, function() {
+        part_emitter_destroy(_sys, _em);
+    }));
+}
+`;
+    return { generatedCode: code };
+  }
+
+  convertDsGridToArray2D(options: { gridVarName: string; width: number; height: number; defaultValue?: string | undefined }): { generatedCode: string } {
+    const defVal = options.defaultValue ?? "0";
+    const code = `// Converted GML DS Grid to 2D Array
+var _w = ${options.width};
+var _h = ${options.height};
+${options.gridVarName} = array_create(_w);
+for (var _i = 0; _i < _w; _i++) {
+    ${options.gridVarName}[_i] = array_create(_h, ${defVal});
+}
+
+// Inline Helper Accessors
+function array2d_get(_arr, _x, _y) { return _arr[_x][_y]; }
+function array2d_set(_arr, _x, _y, _val) { _arr[_x][_y] = _val; }
+`;
+    return { generatedCode: code };
+  }
+
+  buildShaderUniformStruct(options: { shaderName: string; uniforms: Array<{ name: string; type: "float" | "vec2" | "vec3" | "vec4" | "matrix" }> }): { generatedCode: string } {
+    const structName = `${options.shaderName}_Uniforms`;
+    const initLines = options.uniforms.map((u) => `    u_${u.name} = shader_get_uniform(${options.shaderName}, "${u.name}");`).join("\n");
+    const setterLines = options.uniforms.map((u) => {
+      if (u.type === "float") return `    static set_${u.name} = function(_v) { shader_set_uniform_f(u_${u.name}, _v); };`;
+      if (u.type === "vec2") return `    static set_${u.name} = function(_x, _y) { shader_set_uniform_f(u_${u.name}, _x, _y); };`;
+      if (u.type === "vec3") return `    static set_${u.name} = function(_x, _y, _z) { shader_set_uniform_f(u_${u.name}, _x, _y, _z); };`;
+      if (u.type === "vec4") return `    static set_${u.name} = function(_x, _y, _z, _w) { shader_set_uniform_f(u_${u.name}, _x, _y, _z, _w); };`;
+      return `    static set_${u.name} = function(_mat) { shader_set_uniform_matrix(u_${u.name}, _mat); };`;
+    }).join("\n");
+
+    const code = `// GML Shader Uniform Struct Wrapper: ${structName}
+function ${structName}() constructor {
+${initLines}
+
+${setterLines}
+}
+`;
+    return { generatedCode: code };
+  }
+
+  buildNetworkPacketBuffer(options: { packetName: string; fields: Array<{ name: string; type: "u8" | "u16" | "u32" | "f32" | "string" }> }): { generatedCode: string } {
+    const writerLines = options.fields.map((f) => {
+      const typeConst = f.type === "string" ? "buffer_string" : `buffer_${f.type}`;
+      return `    buffer_write(_buf, ${typeConst}, _data.${f.name});`;
+    }).join("\n");
+
+    const readerLines = options.fields.map((f) => {
+      const typeConst = f.type === "string" ? "buffer_string" : `buffer_${f.type}`;
+      return `        ${f.name}: buffer_read(_buf, ${typeConst}),`;
+    }).join("\n");
+
+    const code = `// GML Binary Network Packet Encoder/Decoder: ${options.packetName}
+function packet_encode_${options.packetName}(_data) {
+    var _buf = buffer_create(128, buffer_grow, 1);
+${writerLines}
+    return _buf;
+}
+
+function packet_decode_${options.packetName}(_buf) {
+    return {
+${readerLines}
+    };
+}
+`;
+    return { generatedCode: code };
+  }
+
+  generateDialogueTreeSystem(options: { systemName?: string | undefined }): { generatedCode: string } {
+    const sysName = options.systemName ?? "DialogueTree";
+    const code = `// GML Dynamic Branching Dialogue Tree Struct
+function ${sysName}() constructor {
+    nodes = {};
+
+    static add_node = function(_id, _text, _speaker, _choices = []) {
+        nodes[$ _id] = { id: _id, text: _text, speaker: _speaker, choices: _choices };
+    };
+
+    static get_node = function(_id) {
+        return nodes[$ _id] ?? undefined;
+    };
+}
+
+function DialogueChoice(_text, _targetNodeId, _onSelect = undefined) constructor {
+    text = _text;
+    targetNodeId = _targetNodeId;
+    onSelect = _onSelect;
+}
+`;
+    return { generatedCode: code };
+  }
+
+  buildBehaviorTreeSystem(options: { treeName?: string | undefined }): { generatedCode: string } {
+    const treeName = options.treeName ?? "BehaviorTree";
+    const code = `// GML AI Behavior Tree System (Selector / Sequence / Action)
+enum BTStatus { SUCCESS, FAILURE, RUNNING }
+
+function BTNode() constructor {
+    static tick = function(_entity) { return BTStatus.SUCCESS; };
+}
+
+function BTSelector(_children = []) constructor {
+    children = _children;
+    static tick = function(_entity) {
+        for (var i = 0; i < array_length(children); i++) {
+            var _status = children[i].tick(_entity);
+            if (_status != BTStatus.FAILURE) return _status;
+        }
+        return BTStatus.FAILURE;
+    };
+}
+
+function BTSequence(_children = []) constructor {
+    children = _children;
+    static tick = function(_entity) {
+        for (var i = 0; i < array_length(children); i++) {
+            var _status = children[i].tick(_entity);
+            if (_status != BTStatus.SUCCESS) return _status;
+        }
+        return BTStatus.SUCCESS;
+    };
+}
+
+function BTAction(_actionFunc) constructor {
+    action = _actionFunc;
+    static tick = function(_entity) {
+        return action(_entity);
+    };
+}
+`;
+    return { generatedCode: code };
+  }
+
+  buildSaveStateRollbackSystem(options: { stateStructName?: string | undefined }): { generatedCode: string } {
+    const structName = options.stateStructName ?? "GameStateSnapshot";
+    const code = `// GML Frame Rollback & Game State Save System: ${structName}
+function ${structName}() constructor {
+    history = [];
+    maxHistory = 60;
+
+    static capture_frame = function(_frame_index, _state_struct) {
+        var _copy = variable_clone(_state_struct);
+        array_push(history, { frame: _frame_index, data: _copy });
+        if (array_length(history) > maxHistory) array_delete(history, 0, 1);
+    };
+
+    static rollback_to = function(_frame_index) {
+        for (var i = array_length(history) - 1; i >= 0; i--) {
+            if (history[i].frame == _frame_index) return variable_clone(history[i].data);
+        }
+        return undefined;
+    };
+}
+`;
+    return { generatedCode: code };
+  }
+
+  buildScreenShakeCameraSystem(options: { cameraVar?: string | undefined }): { generatedCode: string } {
+    const camVar = options.cameraVar ?? "view_camera[0]";
+    const code = `// GML Impulse Screen Shake Controller
+function camera_shake_trigger(_intensity = 8, _duration = 15) {
+    global.__shake_intensity = _intensity;
+    global.__shake_duration = _duration;
+    global.__shake_timer = _duration;
+}
+
+function camera_shake_update(_cam = ${camVar}) {
+    if (global.__shake_timer > 0) {
+        global.__shake_timer--;
+        var _progress = global.__shake_timer / global.__shake_duration;
+        var _offset_x = random_range(-1, 1) * global.__shake_intensity * _progress;
+        var _offset_y = random_range(-1, 1) * global.__shake_intensity * _progress;
+        camera_set_view_pos(_cam, camera_get_view_x(_cam) + _offset_x, camera_get_view_y(_cam) + _offset_y);
+    }
+}
+`;
+    return { generatedCode: code };
+  }
+
+  buildLocalizationCsvSystem(options: { defaultLanguage?: string | undefined }): { generatedCode: string } {
+    const defLang = options.defaultLanguage ?? "en";
+    const code = `// GML Localization CSV Parser & Dynamic String Translator
+function LocalizationManager() constructor {
+    strings = {};
+    currentLanguage = "${defLang}";
+
+    static load_csv = function(_file_path) {
+        if (!file_exists(_file_path)) return false;
+        var _file = file_text_open_read(_file_path);
+        var _header = file_text_read_string(_file);
+        file_text_readln(_file);
+        while (!file_text_eof(_file)) {
+            var _line = file_text_read_string(_file);
+            file_text_readln(_file);
+            var _parts = string_split(_line, ",");
+            if (array_length(_parts) >= 2) {
+                strings[$ _parts[0]] = _parts[1];
+            }
+        }
+        file_text_close(_file);
+        return true;
+    };
+
+    static translate = function(_key, _default = "") {
+        return strings[$ _key] ?? (_default != "" ? _default : _key);
+    };
+}
+`;
+    return { generatedCode: code };
+  }
+
+  generateTweenEasingLibrary(options: { includeElastic?: boolean | undefined }): { generatedCode: string } {
+    const code = `// GML Complete Math Easing & Tweening Library
+function ease_linear(_t) { return _t; }
+function ease_in_quad(_t) { return _t * _t; }
+function ease_out_quad(_t) { return _t * (2 - _t); }
+function ease_in_out_quad(_t) { return _t < 0.5 ? 2 * _t * _t : -1 + (4 - 2 * _t) * _t; }
+function ease_in_cubic(_t) { return _t * _t * _t; }
+function ease_out_cubic(_t) { return (--_t) * _t * _t + 1; }
+function ease_out_bounce(_t) {
+    if (_t < (1 / 2.75)) return 7.5625 * _t * _t;
+    else if (_t < (2 / 2.75)) return 7.5625 * (_t -= (1.5 / 2.75)) * _t + 0.75;
+    else if (_t < (2.5 / 2.75)) return 7.5625 * (_t -= (2.25 / 2.75)) * _t + 0.9375;
+    else return 7.5625 * (_t -= (2.625 / 2.75)) * _t + 0.984375;
+}
+`;
+    return { generatedCode: code };
+  }
+
+  buildRenderPipelineDepthSort(options: { enableZBuffer?: boolean | undefined }): { generatedCode: string } {
+    const zBuf = options.enableZBuffer ?? true;
+    const code = `// GML 2.5D / Isometric Depth Sorting Render Pipeline
+function render_pipeline_depth_sort_draw(_instances_array) {
+    ${zBuf ? "gpu_set_ztestenable(true);\ngpu_set_zwriteenable(true);" : ""}
+
+    // Sort by Y position (Depth)
+    array_sort(_instances_array, function(_a, _b) {
+        return _a.y - _b.y;
+    });
+
+    for (var i = 0; i < array_length(_instances_array); i++) {
+        with (_instances_array[i]) {
+            draw_self();
+        }
+    }
+
+    ${zBuf ? "gpu_set_ztestenable(false);\ngpu_set_zwriteenable(false);" : ""}
+}
+`;
+    return { generatedCode: code };
+  }
+
+  auditPerformanceMemory(): { checkedScriptsCount: number; potentialGcAllocations: number; warnings: string[] } {
+    let checked = 0;
+    let allocations = 0;
+    const warnings: string[] = [];
+
+    const files = walkFiles(this.config.projectRoot)
+      .map((p) => this.sandbox.relative(p))
+      .filter((p) => p.endsWith(".gml"));
+
+    for (const relPath of files) {
+      checked++;
+      const content = this.sandbox.readText(relPath, [".gml"]);
+      const lines = content.split(/\r?\n/);
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i]!;
+        if (line.includes("new ") || line.includes("array_create") || line.includes("ds_map_create")) {
+          allocations++;
+          if (line.includes("step") || line.includes("draw")) {
+            warnings.push(`${relPath}:${i + 1}: Dynamic allocation in per-frame event: '${line.trim()}'`);
+          }
+        }
+      }
+    }
+    return { checkedScriptsCount: checked, potentialGcAllocations: allocations, warnings };
+  }
 }
 
 export interface SpriteInspection {

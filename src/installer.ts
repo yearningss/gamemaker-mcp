@@ -77,6 +77,20 @@ export function discoverProjectFile(searchPath?: string): string | undefined {
         if (candidates.length > 0) {
           return fs.realpathSync(candidates[0]!);
         }
+        try {
+          for (const entry of fs.readdirSync(resolved, { withFileTypes: true })) {
+            if (entry.isDirectory() && !entry.name.startsWith(".") && entry.name !== "node_modules") {
+              const subDir = path.join(resolved, entry.name);
+              const subCandidates = fs
+                .readdirSync(subDir, { withFileTypes: true })
+                .filter((e) => e.isFile() && e.name.toLowerCase().endsWith(".yyp"))
+                .map((e) => path.join(subDir, e.name));
+              if (subCandidates.length === 1) {
+                return fs.realpathSync(subCandidates[0]!);
+              }
+            }
+          }
+        } catch {}
       }
     }
   }

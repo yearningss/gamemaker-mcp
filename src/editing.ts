@@ -1013,4 +1013,37 @@ export class GameMakerEditingService {
 
     return { oldName, newName, kind: resource.kind, newPath, refactoredFiles };
   }
+
+  addRoomInstanceBatch(options: {
+    roomName: string;
+    layerName: string;
+    instances: Array<{
+      objectName: string;
+      x: number;
+      y: number;
+      scaleX?: number | undefined;
+      scaleY?: number | undefined;
+      rotation?: number | undefined;
+    }>;
+    expectedRoomSha256: string;
+  }): { addedCount: number; updatedSha256: string } {
+    let currentHash = options.expectedRoomSha256;
+    let added = 0;
+    for (const inst of options.instances) {
+      const res = this.addRoomInstance({
+        roomName: options.roomName,
+        layerName: options.layerName,
+        objectName: inst.objectName,
+        x: inst.x,
+        y: inst.y,
+        ...(inst.scaleX !== undefined ? { scaleX: inst.scaleX } : {}),
+        ...(inst.scaleY !== undefined ? { scaleY: inst.scaleY } : {}),
+        ...(inst.rotation !== undefined ? { rotation: inst.rotation } : {}),
+        expectedRoomSha256: currentHash,
+      });
+      currentHash = String(res["updatedSha256"]);
+      added++;
+    }
+    return { addedCount: added, updatedSha256: currentHash };
+  }
 }
