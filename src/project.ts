@@ -6,6 +6,7 @@ import { applyEdits, modify, type JSONPath } from "jsonc-parser";
 import { parseGmJson, requireGmJson, stringifyGmJson } from "./gm-json.js";
 import { ProjectAnalysisService } from "./analysis.js";
 import { ProjectSandbox } from "./security.js";
+import { discoverProjectFile } from "./installer.js";
 import type {
   ProjectResourceRef,
   ProjectSummary,
@@ -115,9 +116,9 @@ function updateJsonPath(text: string, jsonPath: JSONPath, value: unknown): strin
 }
 
 export class GameMakerProject {
-  readonly config: ServerConfig;
-  readonly sandbox: ProjectSandbox;
-  readonly projectRelativePath: string;
+  config: ServerConfig;
+  sandbox: ProjectSandbox;
+  projectRelativePath: string;
 
   constructor(config: ServerConfig) {
     this.config = config;
@@ -125,13 +126,26 @@ export class GameMakerProject {
     this.projectRelativePath = config.projectFile ? this.sandbox.relative(config.projectFile) : "";
   }
 
-  projectData(): YypData {
-    if (!this.projectRelativePath) {
-      throw new Error("No .yyp GameMaker project is currently loaded. Open a GameMaker project folder or set GAMEMAKER_PROJECT.");
+  ensureProjectLoaded(): string {
+    if (this.projectRelativePath) {
+      return this.projectRelativePath;
     }
+    const autoFile = discoverProjectFile(process.cwd());
+    if (autoFile) {
+      const root = fs.realpathSync(path.dirname(autoFile));
+      this.config = { ...this.config, projectFile: autoFile, projectRoot: root };
+      this.sandbox = new ProjectSandbox(root, this.config.mode, this.config.maxFileBytes);
+      this.projectRelativePath = this.sandbox.relative(autoFile);
+      return this.projectRelativePath;
+    }
+    throw new Error("No .yyp GameMaker project is currently loaded. Open a GameMaker project folder or set GAMEMAKER_PROJECT.");
+  }
+
+  projectData(): YypData {
+    const relPath = this.ensureProjectLoaded();
     return requireGmJson<YypData>(
-      this.sandbox.readText(this.projectRelativePath, [".yyp"]),
-      this.projectRelativePath,
+      this.sandbox.readText(relPath, [".yyp"]),
+      relPath,
     );
   }
 

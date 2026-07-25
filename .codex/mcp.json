@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "gamemaker": {
+      "type": "stdio",
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "C:\\Users\\Micr\\GameMakerMCP\\dist\\src\\index.js"
+      ],
+      "env": {
+        "GAMEMAKER_MCP_MODE": "workspace-write",
+        "GAMEMAKER_MCP_ALLOW_BUILD": "1"
+      }
+    }
+  }
+}
