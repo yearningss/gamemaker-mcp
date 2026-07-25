@@ -171,9 +171,9 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 | `GAMEMAKER_RUNTIME` | inferred | Runtime directory paired with Igor |
 | `GAMEMAKER_USER_DIR` | auto-detect | GameMaker user/configuration directory |
 
-## Complete Tool Catalog (160 Tools)
+## Complete Tool Catalog (190 Tools)
 
-### IDE Integration & Preferences (5 Tools)
+### IDE Integration & Preferences (6 Tools)
 
 | Tool | Purpose |
 |---|---|
@@ -327,6 +327,41 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 | Tool | Purpose |
 |---|---|
 | `gm_connection_config` | Inspect and generate stdio client configuration |
+
+### Architecture, Systems & Powerhouse Code Generators (30 Tools)
+
+| Tool | Purpose |
+|---|---|
+| `gm_gml_object_collision_event_builder` | Build GML sub-pixel collision resolution event code with velocity reflection & friction |
+| `gm_gml_light_shadow_2d_builder` | Build 2D additive light rendering and shadow caster GML struct code |
+| `gm_gml_particle_emitter_burst_builder` | Build GML particle emitter burst code with region shape and auto-cleanup time source |
+| `gm_gml_ds_grid_to_array2d_converter` | Convert legacy GameMaker ds_grid structures to modern 2D GML Arrays |
+| `gm_gml_shader_uniform_struct_builder` | Build GML struct wrapper for binding and updating Shader Uniforms |
+| `gm_gml_network_packet_buffer_builder` | Build binary GameMaker buffer encoder/decoder struct code for multiplayer network packets |
+| `gm_gml_dialogue_tree_generator` | Generate GML node-based dialogue tree struct system with choice branching |
+| `gm_gml_behavior_tree_builder` | Build AI Behavior Tree system code (Selector, Sequence, Action nodes) |
+| `gm_gml_save_state_rollback_builder` | Build frame rollback save state history struct for local and multiplayer rewind |
+| `gm_gml_screen_shake_camera_builder` | Build GML camera impulse screen shake decay and view pos update code |
+| `gm_gml_localization_csv_builder` | Build GML CSV string table parser and dynamic i18n translation manager struct |
+| `gm_gml_tween_easing_library_generator` | Generate GML Math Easing library (Linear, Quad, Cubic, Bounce) |
+| `gm_gml_render_pipeline_depth_sort_builder` | Build 2.5D depth sorting render pipeline code with Z-buffer toggles |
+| `gm_ide_room_instance_batch_add` | Batch insert multiple object instances into a GameMaker room layer |
+| `gm_gml_performance_memory_audit` | Audit GML scripts for per-frame dynamic allocations and GC pressure |
+| `gm_gml_light_shadow_2d_shader_builder` | Generate HLSL/GLSL ES 2D Light & Dynamic Shadow Shader pair (.vsh + .fsh) |
+| `gm_gml_inventory_drag_drop_ui_builder` | Build Drag-and-Drop Inventory Slot UI system struct GML code |
+| `gm_gml_ds_list_to_array_converter` | Convert legacy ds_list functions to modern GML 1D Array methods |
+| `gm_gml_ds_map_to_struct_converter` | Convert legacy ds_map functions to modern GML Structs |
+| `gm_gml_object_state_machine_events_generate` | Generate Object Event State Machine boilerplate scripts across Create, Step, Clean Up |
+| `gm_gml_surface_blur_bloom_shader_builder` | Generate dual-pass Gaussian Blur & Bloom Shader pair (.vsh + .fsh) |
+| `gm_gml_grid_pathfinding_a_star_builder` | Build custom A* Grid Pathfinding GML struct implementation |
+| `gm_gml_audio_spatial_3d_emitter_builder` | Build 3D Spatial Audio Emitter controller struct code |
+| `gm_gml_save_load_json_encrypted_builder` | Build Encrypted JSON Save/Load system struct GML code with MD5 checksums |
+| `gm_gml_camera_view_follow_bounds_builder` | Build Smooth Camera Follow with Deadzone and Room Clamping code |
+| `gm_gml_ds_priority_to_array_converter` | Convert legacy ds_priority queue to sorted GML Array struct |
+| `gm_gml_event_pubsub_dispatcher_builder` | Build Global Observer Pub/Sub Event Dispatcher GML struct |
+| `gm_gml_flexbox_ui_autolayout_builder` | Build Flexbox UI Layout spacing and alignment calculator GML code |
+| `gm_ide_tileset_autotile_rules_configure` | Configure 47-piece or 16-piece autotiling rule metadata on a GameMaker TileSet |
+| `gm_gml_type_checked_struct_builder` | Build schema-validated GML Struct constructor with type assertions |
 
 ## Resources and Prompts
 
