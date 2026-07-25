@@ -246,4 +246,234 @@ export function registerWorkflowPrompts(server: McpServer): void {
       ],
     }),
   );
+
+  server.registerPrompt(
+    "build-2d-lighting-system",
+    {
+      title: "Build 2D Lighting & Shadow System",
+      description: "Generate a complete 2D light raycaster, shadow caster struct, and shader pair.",
+      argsSchema: { systemName: z.string().optional() },
+    },
+    async ({ systemName }) => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text:
+              `Build a 2D Additive Lighting and Dynamic Shadow system${systemName ? ` for ${systemName}` : ""}. ` +
+              "Use gm_gml_light_shadow_2d_builder for GML struct rendering code, gm_gml_light_shadow_2d_shader_builder " +
+              "for vertex and fragment shaders, write the shader with gm_shader_create, validate with gm_project_validate, and compile.",
+          },
+        },
+      ],
+    }),
+  );
+
+  server.registerPrompt(
+    "setup-inventory-system",
+    {
+      title: "Setup Inventory System with Drag & Drop UI",
+      description: "Generate inventory database struct, slot UI controller, and save/load persistence.",
+      argsSchema: { slotCount: z.string().optional() },
+    },
+    async ({ slotCount }) => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text:
+              `Build a full Inventory system with Drag-and-Drop UI${slotCount ? ` (${slotCount} slots)` : ""}. ` +
+              "Call gm_inventory_system_generate for database logic, gm_gml_inventory_drag_drop_ui_builder for UI slot dragging, " +
+              "write the GML script with gm_script_create, and validate with gm_project_validate.",
+          },
+        },
+      ],
+    }),
+  );
+
+  server.registerPrompt(
+    "convert-legacy-ds-structures",
+    {
+      title: "Convert legacy DS structures to modern GML 2024+",
+      description: "Audit and convert legacy ds_list, ds_map, ds_grid, and ds_priority to GML 2D arrays & structs.",
+      argsSchema: { focusVariable: z.string().optional() },
+    },
+    async ({ focusVariable }) => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text:
+              "Audit legacy Data Structures across the project. Use gm_gml_ds_to_struct_converter, gm_gml_ds_grid_to_array2d_converter, " +
+              "gm_gml_ds_list_to_array_converter, gm_gml_ds_map_to_struct_converter, and gm_gml_ds_priority_to_array_converter " +
+              `to replace manual memory management with automatic Garbage Collector arrays and structs.${focusVariable ? ` Focus on ${focusVariable}.` : ""}`,
+          },
+        },
+      ],
+    }),
+  );
+
+  server.registerPrompt(
+    "setup-ai-behavior-tree",
+    {
+      title: "Setup AI Behavior Tree System",
+      description: "Build AI Selector, Sequence, and Action nodes for NPC/enemy decision making.",
+      argsSchema: { treeName: z.string().optional() },
+    },
+    async ({ treeName }) => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text:
+              `Build an AI Behavior Tree system${treeName ? ` named ${treeName}` : ""}. ` +
+              "Call gm_gml_behavior_tree_builder to generate Selector, Sequence, and Action node structs, " +
+              "write script with gm_script_create, preflight with gm_gml_validate_snippet, and run gm_project_validate.",
+          },
+        },
+      ],
+    }),
+  );
+
+  server.registerPrompt(
+    "setup-localization-csv-i18n",
+    {
+      title: "Setup CSV Localization & i18n Translation",
+      description: "Scan project for hardcoded UI text strings, generate localization.json / CSV string table, and build translator.",
+      argsSchema: { defaultLanguage: z.string().optional() },
+    },
+    async ({ defaultLanguage }) => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text:
+              "Scan project for hardcoded UI strings using gm_i18n_extract_strings. " +
+              `Call gm_gml_localization_csv_builder to generate CSV parser and translator struct code${defaultLanguage ? ` (default language: ${defaultLanguage})` : ""}, ` +
+              "write translation file with gm_datafile_create, and validate with gm_project_validate.",
+          },
+        },
+      ],
+    }),
+  );
+
+  server.registerPrompt(
+    "audit-gc-memory-leaks",
+    {
+      title: "Audit Garbage Collector & Per-Frame Memory Leaks",
+      description: "Scan GML scripts for per-frame dynamic array/struct/DS allocations in step and draw events.",
+      argsSchema: { focusScript: z.string().optional() },
+    },
+    async ({ focusScript }) => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text:
+              `Audit Garbage Collector pressure and per-frame memory leaks${focusScript ? ` in ${focusScript}` : ""}. ` +
+              "Call gm_gml_performance_memory_audit and gm_gml_gc_allocations_audit. " +
+              "Identify allocations inside Step and Draw events, and refactor them to use static methods or instance variables.",
+          },
+        },
+      ],
+    }),
+  );
+
+  server.registerPrompt(
+    "setup-encrypted-save-system",
+    {
+      title: "Setup Encrypted JSON Save System",
+      description: "Build encrypted JSON save/load state system with MD5/salt tamper checksums.",
+      argsSchema: { fileName: z.string().optional() },
+    },
+    async ({ fileName }) => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text:
+              `Setup an Encrypted JSON Save/Load system${fileName ? ` (${fileName})` : ""}. ` +
+              "Call gm_gml_save_load_json_encrypted_builder to generate buffer string encoder, salted MD5 hash checksum validation, " +
+              "and save state rollback support using gm_gml_save_state_rollback_builder.",
+          },
+        },
+      ],
+    }),
+  );
+
+  server.registerPrompt(
+    "setup-isometric-depth-sorting",
+    {
+      title: "Setup 2.5D Isometric Depth Sorting Pipeline",
+      description: "Build 2.5D isometric depth sorting render pipeline code with Z-buffer toggles.",
+      argsSchema: { enableZBuffer: z.string().optional() },
+    },
+    async ({ enableZBuffer }) => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text:
+              "Build a 2.5D Isometric Depth Sorting render pipeline. " +
+              `Call gm_gml_render_pipeline_depth_sort_builder${enableZBuffer ? ` with enableZBuffer=${enableZBuffer}` : ""}, ` +
+              "write render controller script with gm_script_create, and validate with gm_project_validate.",
+          },
+        },
+      ],
+    }),
+  );
+
+  server.registerPrompt(
+    "setup-branching-dialogue-tree",
+    {
+      title: "Setup Node-Based Branching Dialogue Tree",
+      description: "Generate node-based dialogue tree struct system with choice branching and callback triggers.",
+      argsSchema: { systemName: z.string().optional() },
+    },
+    async ({ systemName }) => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text:
+              `Generate a node-based Branching Dialogue Tree system${systemName ? ` (${systemName})` : ""}. ` +
+              "Call gm_gml_dialogue_tree_generator, write dialogue manager script with gm_script_create, " +
+              "validate snippet with gm_gml_validate_snippet, and test with gm_project_validate.",
+          },
+        },
+      ],
+    }),
+  );
+
+  server.registerPrompt(
+    "setup-multiplayer-packet-buffers",
+    {
+      title: "Setup Binary Network Packet Buffer System",
+      description: "Build binary GameMaker buffer encoder/decoder struct code for multiplayer network packets.",
+      argsSchema: { packetName: z.string().min(1) },
+    },
+    async ({ packetName }) => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text:
+              `Build binary Network Packet Buffer encoder and decoder for packet '${packetName}'. ` +
+              "Call gm_gml_network_packet_buffer_builder with fields array (u8, u16, u32, f32, string), " +
+              "write packet script with gm_script_create, and validate project structure with gm_project_validate.",
+          },
+        },
+      ],
+    }),
+  );
 }
