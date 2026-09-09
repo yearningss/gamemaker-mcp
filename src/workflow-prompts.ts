@@ -476,4 +476,116 @@ export function registerWorkflowPrompts(server: McpServer): void {
       ],
     }),
   );
+
+  server.registerPrompt(
+    "setup-ecs-architecture",
+    {
+      title: "Setup Entity-Component-System (ECS) Architecture",
+      description: "Setup complete Entity-Component-System (ECS) framework for high entity count performance.",
+      argsSchema: { worldName: z.string().optional() },
+    },
+    async ({ worldName }) => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text:
+              `Scaffold high-performance ECS architecture${worldName ? ` for world '${worldName}'` : ""}. ` +
+              "Call gm_gml_ecs_system_builder to generate ECSWorld struct, write controller script with gm_script_create, " +
+              "and inspect syntax with gm_gml_validate_snippet.",
+          },
+        },
+      ],
+    }),
+  );
+
+  server.registerPrompt(
+    "setup-procedural-dungeon",
+    {
+      title: "Setup Procedural Dungeon Generator",
+      description: "Build procedural dungeon generator with rooms, corridors, and tilemap binding.",
+      argsSchema: { roomCount: z.string().optional() },
+    },
+    async ({ roomCount }) => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text:
+              `Setup procedural dungeon generator${roomCount ? ` targeting ${roomCount} rooms` : ""}. ` +
+              "Call gm_gml_procedural_generation_dungeon_builder to generate BSP generator struct, " +
+              "write generation script with gm_script_create, and validate project with gm_project_validate.",
+          },
+        },
+      ],
+    }),
+  );
+
+  server.registerPrompt(
+    "setup-crt-retro-pipeline",
+    {
+      title: "Setup Retro CRT Simulation Shader Pipeline",
+      description: "Generate full-screen GLSL ES CRT filter with scanlines, screen curvature, and chromatic aberration.",
+      argsSchema: { shaderName: z.string().optional() },
+    },
+    async ({ shaderName }) => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text:
+              `Scaffold retro CRT post-processing shader pipeline${shaderName ? ` as '${shaderName}'` : ""}. ` +
+              "Call gm_shader_crt_retro_builder, create shader asset with gm_shader_create, and analyze varying compatibility with gm_shader_analyze.",
+          },
+        },
+      ],
+    }),
+  );
+
+  server.registerPrompt(
+    "setup-rollback-netcode",
+    {
+      title: "Setup Rollback Netcode Simulation System",
+      description: "Scaffold GGPO-style input ring buffer, client-side prediction, and resimulation rollback loop.",
+      argsSchema: { maxFrames: z.string().optional() },
+    },
+    async ({ maxFrames }) => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text:
+              `Scaffold GGPO-style rollback netcode simulation${maxFrames ? ` with ${maxFrames} rollback frames` : ""}. ` +
+              "Call gm_gml_rollback_netcode_simulator, save rollback script with gm_script_create, and validate with gm_project_validate.",
+          },
+        },
+      ],
+    }),
+  );
+
+  server.registerPrompt(
+    "setup-fighting-combo-buffer",
+    {
+      title: "Setup Fighting Game Combo Input Buffer",
+      description: "Build fighting game directional and button combo buffer with fuzzy timing windows.",
+      argsSchema: { windowFrames: z.string().optional() },
+    },
+    async ({ windowFrames }) => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text:
+              `Build fighting game combo input buffer${windowFrames ? ` with ${windowFrames} frames window` : ""}. ` +
+              "Call gm_gml_combo_input_buffer_builder, write buffer controller script with gm_script_create, and inspect with gm_gml_validate_snippet.",
+          },
+        },
+      ],
+    }),
+  );
 }

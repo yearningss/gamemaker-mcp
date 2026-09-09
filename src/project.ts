@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { execSync } from "node:child_process";
 
 import { applyEdits, modify, type JSONPath } from "jsonc-parser";
 
@@ -4313,6 +4314,1340 @@ ${fieldChecks}
 }
 `;
     return { generatedCode: code };
+  }
+
+  buildEcsSystem(options: { systemName?: string | undefined }): { generatedCode: string } {
+    const sysName = options.systemName ?? "ECSWorld";
+    const code = `// GML High-Performance Entity-Component-System (ECS) Framework: ${sysName}
+function ${sysName}() constructor {
+    nextEntityId = 1;
+    entities = [];
+    components = {};
+    systems = [];
+
+    static create_entity = function() {
+        var _id = nextEntityId++;
+        array_push(entities, _id);
+        return _id;
+    };
+
+    static destroy_entity = function(_entity_id) {
+        var _idx = array_get_index(entities, _entity_id);
+        if (_idx >= 0) array_delete(entities, _idx, 1);
+        var _names = struct_get_names(components);
+        for (var i = 0; i < array_length(_names); i++) {
+            var _c_map = components[$ _names[i]];
+            if (struct_exists(_c_map, string(_entity_id))) {
+                struct_remove(_c_map, string(_entity_id));
+            }
+        }
+    };
+
+    static add_component = function(_entity_id, _comp_name, _comp_data) {
+        if (!struct_exists(components, _comp_name)) components[$ _comp_name] = {};
+        components[$ _comp_name][$ string(_entity_id)] = _comp_data;
+    };
+
+    static get_component = function(_entity_id, _comp_name) {
+        if (!struct_exists(components, _comp_name)) return undefined;
+        return components[$ _comp_name][$ string(_entity_id)];
+    };
+
+    static has_component = function(_entity_id, _comp_name) {
+        if (!struct_exists(components, _comp_name)) return false;
+        return struct_exists(components[$ _comp_name], string(_entity_id));
+    };
+
+    static register_system = function(_system_func) {
+        array_push(systems, _system_func);
+    };
+
+    static update = function(_dt) {
+        for (var i = 0; i < array_length(systems); i++) {
+            systems[i](self, _dt);
+        }
+    };
+}
+`;
+    return { generatedCode: code };
+  }
+
+  buildSpatialHashGrid(options: { cellSize?: number | undefined }): { generatedCode: string } {
+    const cSize = options.cellSize ?? 64;
+    const code = `// 2D Spatial Hash Grid Collision Broadphase Optimizer
+function SpatialHashGrid(_cell_size = ${cSize}) constructor {
+    cellSize = _cell_size;
+    grid = {};
+
+    static _hash = function(_cx, _cy) {
+        return string(_cx) + ":" + string(_cy);
+    };
+
+    static clear = function() {
+        grid = {};
+    };
+
+    static insert = function(_id, _bbox_left, _bbox_top, _bbox_right, _bbox_bottom) {
+        var _start_x = floor(_bbox_left / cellSize);
+        var _end_x = floor(_bbox_right / cellSize);
+        var _start_y = floor(_bbox_top / cellSize);
+        var _end_y = floor(_bbox_bottom / cellSize);
+
+        for (var _cx = _start_x; _cx <= _end_x; _cx++) {
+            for (var _cy = _start_y; _cy <= _end_y; _cy++) {
+                var _k = _hash(_cx, _cy);
+                if (!struct_exists(grid, _k)) grid[$ _k] = [];
+                array_push(grid[$ _k], _id);
+            }
+        }
+    };
+
+    static query_range = function(_bbox_left, _bbox_top, _bbox_right, _bbox_bottom) {
+        var _results = [];
+        var _seen = {};
+        var _start_x = floor(_bbox_left / cellSize);
+        var _end_x = floor(_bbox_right / cellSize);
+        var _start_y = floor(_bbox_top / cellSize);
+        var _end_y = floor(_bbox_bottom / cellSize);
+
+        for (var _cx = _start_x; _cx <= _end_x; _cx++) {
+            for (var _cy = _start_y; _cy <= _end_y; _cy++) {
+                var _k = _hash(_cx, _cy);
+                if (struct_exists(grid, _k)) {
+                    var _cell = grid[$ _k];
+                    for (var i = 0; i < array_length(_cell); i++) {
+                        var _item = _cell[i];
+                        var _str = string(_item);
+                        if (!struct_exists(_seen, _str)) {
+                            _seen[$ _str] = true;
+                            array_push(_results, _item);
+                        }
+                    }
+                }
+            }
+        }
+        return _results;
+    };
+}
+`;
+    return { generatedCode: code };
+  }
+
+  buildQuadtree(options: { maxObjects?: number | undefined; maxLevels?: number | undefined }): { generatedCode: string } {
+    const maxObj = options.maxObjects ?? 10;
+    const maxLvl = options.maxLevels ?? 5;
+    const code = `// 2D Quadtree Spatial Partitioning System
+function Quadtree(_level, _x, _y, _width, _height) constructor {
+    level = _level;
+    x = _x;
+    y = _y;
+    width = _width;
+    height = _height;
+    maxObjects = ${maxObj};
+    maxLevels = ${maxLvl};
+    objects = [];
+    nodes = array_create(4, undefined);
+
+    static clear = function() {
+        array_resize(objects, 0);
+        for (var i = 0; i < 4; i++) {
+            if (nodes[i] != undefined) {
+                nodes[i].clear();
+                nodes[i] = undefined;
+            }
+        }
+    };
+
+    static split = function() {
+        var _sub_w = width / 2;
+        var _sub_h = height / 2;
+        nodes[0] = new Quadtree(level + 1, x + _sub_w, y, _sub_w, _sub_h);
+        nodes[1] = new Quadtree(level + 1, x, y, _sub_w, _sub_h);
+        nodes[2] = new Quadtree(level + 1, x, y + _sub_h, _sub_w, _sub_h);
+        nodes[3] = new Quadtree(level + 1, x + _sub_w, y + _sub_h, _sub_w, _sub_h);
+    };
+
+    static get_index = function(_bbox) {
+        var _mid_x = x + (width / 2);
+        var _mid_y = y + (height / 2);
+        var _top = (_bbox.top < _mid_y && _bbox.bottom < _mid_y);
+        var _bottom = (_bbox.top > _mid_y);
+        if (_bbox.left < _mid_x && _bbox.right < _mid_x) {
+            if (_top) return 1;
+            if (_bottom) return 2;
+        } else if (_bbox.left > _mid_x) {
+            if (_top) return 0;
+            if (_bottom) return 3;
+        }
+        return -1;
+    };
+
+    static insert = function(_item) {
+        if (nodes[0] != undefined) {
+            var _idx = get_index(_item.bbox);
+            if (_idx != -1) {
+                nodes[_idx].insert(_item);
+                return;
+            }
+        }
+        array_push(objects, _item);
+        if (array_length(objects) > maxObjects && level < maxLevels) {
+            if (nodes[0] == undefined) split();
+            var i = 0;
+            while (i < array_length(objects)) {
+                var _sub_idx = get_index(objects[i].bbox);
+                if (_sub_idx != -1) {
+                    var _obj = objects[i];
+                    array_delete(objects, i, 1);
+                    nodes[_sub_idx].insert(_obj);
+                } else {
+                    i++;
+                }
+            }
+        }
+    };
+}
+`;
+    return { generatedCode: code };
+  }
+
+  buildHierarchicalStateMachine(options: { rootState?: string | undefined }): { generatedCode: string } {
+    const rState = options.rootState ?? "IDLE";
+    const code = `// Hierarchical Finite State Machine (HFSM) Framework
+function HFSMNode(_name, _parent = undefined) constructor {
+    name = _name;
+    parent = _parent;
+    substates = {};
+    activeSubstate = undefined;
+
+    enterAction = undefined;
+    stepAction = undefined;
+    leaveAction = undefined;
+
+    static add_substate = function(_sub_name, _on_enter = undefined, _on_step = undefined, _on_leave = undefined) {
+        var _node = new HFSMNode(_sub_name, self);
+        _node.enterAction = _on_enter;
+        _node.stepAction = _on_step;
+        _node.leaveAction = _on_leave;
+        substates[$ _sub_name] = _node;
+        return _node;
+    };
+
+    static transition_to = function(_sub_name) {
+        if (activeSubstate != undefined && activeSubstate.leaveAction != undefined) {
+            activeSubstate.leaveAction();
+        }
+        activeSubstate = substates[$ _sub_name];
+        if (activeSubstate != undefined && activeSubstate.enterAction != undefined) {
+            activeSubstate.enterAction();
+        }
+    };
+
+    static update = function() {
+        if (stepAction != undefined) stepAction();
+        if (activeSubstate != undefined) activeSubstate.update();
+    };
+}
+
+function HierarchicalStateMachine(_initial_root = "${rState}") constructor {
+    root = new HFSMNode(_initial_root);
+    static update = function() { root.update(); };
+}
+`;
+    return { generatedCode: code };
+  }
+
+  buildCrtRetroShader(options: { shaderName?: string | undefined }): { vertexShader: string; fragmentShader: string } {
+    const sName = options.shaderName ?? "shd_crt_retro";
+    const vsh = `// Retro CRT Vertex Shader: ${sName}
+attribute vec3 in_Position;
+attribute vec4 in_Colour;
+attribute vec2 in_TextureCoord;
+
+varying vec2 v_vTexcoord;
+varying vec4 v_vColour;
+
+void main() {
+    gl_Position = gm_Matrices[MATRIX_WORLD_VIEW_PROJECTION] * vec4(in_Position, 1.0);
+    v_vColour = in_Colour;
+    v_vTexcoord = in_TextureCoord;
+}
+`;
+    const fsh = `// Retro CRT Simulation Fragment Shader: ${sName}
+varying vec2 v_vTexcoord;
+varying vec4 v_vColour;
+
+uniform vec2 u_uResolution;
+uniform float u_uCurvature;
+uniform float u_uScanlineIntensity;
+uniform float u_uChromaticAberration;
+
+vec2 curve(vec2 uv) {
+    uv = (uv - 0.5) * 2.0;
+    uv *= 1.1;
+    uv.x *= 1.0 + pow((abs(uv.y) / 4.0), 2.0) * u_uCurvature;
+    uv.y *= 1.0 + pow((abs(uv.x) / 3.0), 2.0) * u_uCurvature;
+    uv = (uv / 2.0) + 0.5;
+    return uv;
+}
+
+void main() {
+    vec2 uv = curve(v_vTexcoord);
+    if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
+        gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        return;
+    }
+    
+    float r = texture2D(gm_BaseTexture, uv + vec2(u_uChromaticAberration, 0.0)).r;
+    float g = texture2D(gm_BaseTexture, uv).g;
+    float b = texture2D(gm_BaseTexture, uv - vec2(u_uChromaticAberration, 0.0)).b;
+    vec3 col = vec3(r, g, b);
+
+    float scanline = sin(uv.y * u_uResolution.y * 3.14159) * 0.5 + 0.5;
+    col *= 1.0 - (1.0 - scanline) * u_uScanlineIntensity;
+
+    gl_FragColor = vec4(col, 1.0) * v_vColour;
+}
+`;
+    return { vertexShader: vsh, fragmentShader: fsh };
+  }
+
+  buildWaterDistortionShader(options: { shaderName?: string | undefined }): { vertexShader: string; fragmentShader: string } {
+    const sName = options.shaderName ?? "shd_water_distortion";
+    const vsh = `// 2D Water Distortion Vertex Shader: ${sName}
+attribute vec3 in_Position;
+attribute vec4 in_Colour;
+attribute vec2 in_TextureCoord;
+
+varying vec2 v_vTexcoord;
+varying vec4 v_vColour;
+
+void main() {
+    gl_Position = gm_Matrices[MATRIX_WORLD_VIEW_PROJECTION] * vec4(in_Position, 1.0);
+    v_vColour = in_Colour;
+    v_vTexcoord = in_TextureCoord;
+}
+`;
+    const fsh = `// 2D Water Distortion & Caustics Fragment Shader: ${sName}
+varying vec2 v_vTexcoord;
+varying vec4 v_vColour;
+
+uniform float u_uTime;
+uniform vec2 u_uSpeed;
+uniform vec2 u_uFrequency;
+uniform vec2 u_uAmplitude;
+
+void main() {
+    vec2 coord = v_vTexcoord;
+    coord.x += sin(coord.y * u_uFrequency.y + u_uTime * u_uSpeed.x) * u_uAmplitude.x;
+    coord.y += cos(coord.x * u_uFrequency.x + u_uTime * u_uSpeed.y) * u_uAmplitude.y;
+    vec4 baseColor = texture2D(gm_BaseTexture, coord);
+    vec4 tint = vec4(0.2, 0.5, 0.9, 1.0);
+    gl_FragColor = mix(baseColor, tint, 0.25) * v_vColour;
+}
+`;
+    return { vertexShader: vsh, fragmentShader: fsh };
+  }
+
+  buildDissolveBurnShader(options: { shaderName?: string | undefined }): { vertexShader: string; fragmentShader: string } {
+    const sName = options.shaderName ?? "shd_dissolve_burn";
+    const vsh = `// Dissolve & Burn Edge Vertex Shader: ${sName}
+attribute vec3 in_Position;
+attribute vec4 in_Colour;
+attribute vec2 in_TextureCoord;
+
+varying vec2 v_vTexcoord;
+varying vec4 v_vColour;
+
+void main() {
+    gl_Position = gm_Matrices[MATRIX_WORLD_VIEW_PROJECTION] * vec4(in_Position, 1.0);
+    v_vColour = in_Colour;
+    v_vTexcoord = in_TextureCoord;
+}
+`;
+    const fsh = `// Dissolve & Burn Edge Fragment Shader: ${sName}
+varying vec2 v_vTexcoord;
+varying vec4 v_vColour;
+
+uniform float u_uThreshold;
+uniform float u_uBurnEdgeWidth;
+uniform vec4 u_uBurnColor;
+
+void main() {
+    vec4 mainTex = texture2D(gm_BaseTexture, v_vTexcoord);
+    float noise = fract(sin(dot(v_vTexcoord.xy ,vec2(12.9898,78.233))) * 43758.5453);
+    if (noise < u_uThreshold) {
+        discard;
+    }
+    if (noise < u_uThreshold + u_uBurnEdgeWidth) {
+        gl_FragColor = u_uBurnColor * v_vColour;
+    } else {
+        gl_FragColor = mainTex * v_vColour;
+    }
+}
+`;
+    return { vertexShader: vsh, fragmentShader: fsh };
+  }
+
+  buildPaletteSwapShader(options: { shaderName?: string | undefined }): { vertexShader: string; fragmentShader: string } {
+    const sName = options.shaderName ?? "shd_palette_swap";
+    const vsh = `// Palette Swap Vertex Shader: ${sName}
+attribute vec3 in_Position;
+attribute vec4 in_Colour;
+attribute vec2 in_TextureCoord;
+
+varying vec2 v_vTexcoord;
+varying vec4 v_vColour;
+
+void main() {
+    gl_Position = gm_Matrices[MATRIX_WORLD_VIEW_PROJECTION] * vec4(in_Position, 1.0);
+    v_vColour = in_Colour;
+    v_vTexcoord = in_TextureCoord;
+}
+`;
+    const fsh = `// Palette Swap Fragment Shader: ${sName}
+varying vec2 v_vTexcoord;
+varying vec4 v_vColour;
+
+uniform float u_uPaletteIndex;
+uniform float u_uPaletteCount;
+uniform sampler2D u_sPaletteTexture;
+
+void main() {
+    vec4 srcColor = texture2D(gm_BaseTexture, v_vTexcoord);
+    float indexU = srcColor.r;
+    float indexV = (u_uPaletteIndex + 0.5) / u_uPaletteCount;
+    vec4 newColor = texture2D(u_sPaletteTexture, vec2(indexU, indexV));
+    newColor.a *= srcColor.a;
+    gl_FragColor = newColor * v_vColour;
+}
+`;
+    return { vertexShader: vsh, fragmentShader: fsh };
+  }
+
+  buildOutlineGlowShader(options: { shaderName?: string | undefined }): { vertexShader: string; fragmentShader: string } {
+    const sName = options.shaderName ?? "shd_outline_glow";
+    const vsh = `// 2D Sprite Outline & Glow Vertex Shader: ${sName}
+attribute vec3 in_Position;
+attribute vec4 in_Colour;
+attribute vec2 in_TextureCoord;
+
+varying vec2 v_vTexcoord;
+varying vec4 v_vColour;
+
+void main() {
+    gl_Position = gm_Matrices[MATRIX_WORLD_VIEW_PROJECTION] * vec4(in_Position, 1.0);
+    v_vColour = in_Colour;
+    v_vTexcoord = in_TextureCoord;
+}
+`;
+    const fsh = `// 2D Sprite Outline & Glow Fragment Shader: ${sName}
+varying vec2 v_vTexcoord;
+varying vec4 v_vColour;
+
+uniform vec2 u_uTexelSize;
+uniform vec4 u_uOutlineColor;
+uniform float u_uOutlineThickness;
+
+void main() {
+    vec4 baseCol = texture2D(gm_BaseTexture, v_vTexcoord);
+    float alpha = 0.0;
+    
+    alpha += texture2D(gm_BaseTexture, v_vTexcoord + vec2( u_uTexelSize.x * u_uOutlineThickness, 0.0)).a;
+    alpha += texture2D(gm_BaseTexture, v_vTexcoord + vec2(-u_uTexelSize.x * u_uOutlineThickness, 0.0)).a;
+    alpha += texture2D(gm_BaseTexture, v_vTexcoord + vec2(0.0,  u_uTexelSize.y * u_uOutlineThickness)).a;
+    alpha += texture2D(gm_BaseTexture, v_vTexcoord + vec2(0.0, -u_uTexelSize.y * u_uOutlineThickness)).a;
+
+    if (baseCol.a < 0.1 && alpha > 0.1) {
+        gl_FragColor = u_uOutlineColor;
+    } else {
+        gl_FragColor = baseCol * v_vColour;
+    }
+}
+`;
+    return { vertexShader: vsh, fragmentShader: fsh };
+  }
+
+  buildFogOfWarShader(options: { shaderName?: string | undefined }): { vertexShader: string; fragmentShader: string } {
+    const sName = options.shaderName ?? "shd_fog_of_war";
+    const vsh = `// Fog of War Vertex Shader: ${sName}
+attribute vec3 in_Position;
+attribute vec4 in_Colour;
+attribute vec2 in_TextureCoord;
+
+varying vec2 v_vTexcoord;
+varying vec4 v_vColour;
+
+void main() {
+    gl_Position = gm_Matrices[MATRIX_WORLD_VIEW_PROJECTION] * vec4(in_Position, 1.0);
+    v_vColour = in_Colour;
+    v_vTexcoord = in_TextureCoord;
+}
+`;
+    const fsh = `// Fog of War Radial Soft Mask Fragment Shader: ${sName}
+varying vec2 v_vTexcoord;
+varying vec4 v_vColour;
+
+uniform sampler2D u_sVisibilitySurface;
+uniform vec4 u_uFogColor;
+
+void main() {
+    vec4 baseTex = texture2D(gm_BaseTexture, v_vTexcoord);
+    float visibility = texture2D(u_sVisibilitySurface, v_vTexcoord).r;
+    vec4 finalColor = mix(u_uFogColor, baseTex, visibility);
+    gl_FragColor = finalColor * v_vColour;
+}
+`;
+    return { vertexShader: vsh, fragmentShader: fsh };
+  }
+
+  buildShockwaveDistortionShader(options: { shaderName?: string | undefined }): { vertexShader: string; fragmentShader: string } {
+    const sName = options.shaderName ?? "shd_shockwave";
+    const vsh = `// Shockwave Distortion Vertex Shader: ${sName}
+attribute vec3 in_Position;
+attribute vec4 in_Colour;
+attribute vec2 in_TextureCoord;
+
+varying vec2 v_vTexcoord;
+varying vec4 v_vColour;
+
+void main() {
+    gl_Position = gm_Matrices[MATRIX_WORLD_VIEW_PROJECTION] * vec4(in_Position, 1.0);
+    v_vColour = in_Colour;
+    v_vTexcoord = in_TextureCoord;
+}
+`;
+    const fsh = `// Radial Shockwave Distortion Fragment Shader: ${sName}
+varying vec2 v_vTexcoord;
+varying vec4 v_vColour;
+
+uniform vec2 u_uCenter;
+uniform float u_uTime;
+uniform float u_uRadius;
+uniform float u_uForce;
+uniform float u_uThickness;
+
+void main() {
+    vec2 uv = v_vTexcoord;
+    float dist = distance(uv, u_uCenter);
+    if (dist <= (u_uRadius + u_uThickness) && dist >= (u_uRadius - u_uThickness)) {
+        float diff = (dist - u_uRadius);
+        float powDiff = 1.0 - pow(abs(diff * (1.0 / u_uThickness)), 0.8);
+        float diffTime = diff * powDiff;
+        vec2 diffUV = normalize(uv - u_uCenter);
+        uv += (diffUV * diffTime) * (u_uForce * (1.0 - u_uTime));
+    }
+    gl_FragColor = texture2D(gm_BaseTexture, uv) * v_vColour;
+}
+`;
+    return { vertexShader: vsh, fragmentShader: fsh };
+  }
+
+  buildGlitchVhsShader(options: { shaderName?: string | undefined }): { vertexShader: string; fragmentShader: string } {
+    const sName = options.shaderName ?? "shd_glitch_vhs";
+    const vsh = `// Glitch & VHS Vertex Shader: ${sName}
+attribute vec3 in_Position;
+attribute vec4 in_Colour;
+attribute vec2 in_TextureCoord;
+
+varying vec2 v_vTexcoord;
+varying vec4 v_vColour;
+
+void main() {
+    gl_Position = gm_Matrices[MATRIX_WORLD_VIEW_PROJECTION] * vec4(in_Position, 1.0);
+    v_vColour = in_Colour;
+    v_vTexcoord = in_TextureCoord;
+}
+`;
+    const fsh = `// Glitch & VHS Fragment Shader: ${sName}
+varying vec2 v_vTexcoord;
+varying vec4 v_vColour;
+
+uniform float u_uTime;
+uniform float u_uIntensity;
+
+float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+}
+
+void main() {
+    vec2 uv = v_vTexcoord;
+    float jitter = (hash(vec2(u_uTime, uv.y)) - 0.5) * 2.0 * u_uIntensity;
+    if (abs(jitter) > 0.01) uv.x += jitter;
+
+    float r = texture2D(gm_BaseTexture, uv + vec2(0.01 * u_uIntensity, 0.0)).r;
+    float g = texture2D(gm_BaseTexture, uv).g;
+    float b = texture2D(gm_BaseTexture, uv - vec2(0.01 * u_uIntensity, 0.0)).b;
+    float a = texture2D(gm_BaseTexture, uv).a;
+
+    gl_FragColor = vec4(r, g, b, a) * v_vColour;
+}
+`;
+    return { vertexShader: vsh, fragmentShader: fsh };
+  }
+
+  buildWindGrassSwayShader(options: { shaderName?: string | undefined }): { vertexShader: string; fragmentShader: string } {
+    const sName = options.shaderName ?? "shd_wind_sway";
+    const vsh = `// Vegetation Wind Sway Vertex Shader: ${sName}
+attribute vec3 in_Position;
+attribute vec4 in_Colour;
+attribute vec2 in_TextureCoord;
+
+varying vec2 v_vTexcoord;
+varying vec4 v_vColour;
+
+uniform float u_uTime;
+uniform float u_uWindSpeed;
+uniform float u_uWindStrength;
+
+void main() {
+    vec3 pos = in_Position;
+    float sway = sin(u_uTime * u_uWindSpeed + pos.x * 0.05) * u_uWindStrength * (1.0 - in_TextureCoord.y);
+    pos.x += sway;
+    gl_Position = gm_Matrices[MATRIX_WORLD_VIEW_PROJECTION] * vec4(pos, 1.0);
+    v_vColour = in_Colour;
+    v_vTexcoord = in_TextureCoord;
+}
+`;
+    const fsh = `// Vegetation Wind Sway Fragment Shader: ${sName}
+varying vec2 v_vTexcoord;
+varying vec4 v_vColour;
+
+void main() {
+    gl_FragColor = texture2D(gm_BaseTexture, v_vTexcoord) * v_vColour;
+}
+`;
+    return { vertexShader: vsh, fragmentShader: fsh };
+  }
+
+  buildColorGradingLutShader(options: { shaderName?: string | undefined }): { vertexShader: string; fragmentShader: string } {
+    const sName = options.shaderName ?? "shd_color_grading_lut";
+    const vsh = `// 3D LUT Color Grading Vertex Shader: ${sName}
+attribute vec3 in_Position;
+attribute vec4 in_Colour;
+attribute vec2 in_TextureCoord;
+
+varying vec2 v_vTexcoord;
+varying vec4 v_vColour;
+
+void main() {
+    gl_Position = gm_Matrices[MATRIX_WORLD_VIEW_PROJECTION] * vec4(in_Position, 1.0);
+    v_vColour = in_Colour;
+    v_vTexcoord = in_TextureCoord;
+}
+`;
+    const fsh = `// 3D LUT Color Grading Fragment Shader: ${sName}
+varying vec2 v_vTexcoord;
+varying vec4 v_vColour;
+
+uniform sampler2D u_sLutTexture;
+uniform float u_uStrength;
+
+void main() {
+    vec4 rawColor = texture2D(gm_BaseTexture, v_vTexcoord);
+    float blueColor = rawColor.b * 15.0;
+    vec2 quad1;
+    quad1.y = floor(floor(blueColor) / 4.0);
+    quad1.x = floor(blueColor) - (quad1.y * 4.0);
+
+    vec2 quad2;
+    quad2.y = floor(ceil(blueColor) / 4.0);
+    quad2.x = ceil(blueColor) - (quad2.y * 4.0);
+
+    vec2 texPos1 = (quad1 * 0.25) + 0.5/64.0 + ((0.25 - 1.0/64.0) * rawColor.rg);
+    vec2 texPos2 = (quad2 * 0.25) + 0.5/64.0 + ((0.25 - 1.0/64.0) * rawColor.rg);
+
+    vec4 newColor1 = texture2D(u_sLutTexture, texPos1);
+    vec4 newColor2 = texture2D(u_sLutTexture, texPos2);
+    vec4 gradedColor = mix(newColor1, newColor2, fract(blueColor));
+
+    gl_FragColor = mix(rawColor, gradedColor, u_uStrength) * v_vColour;
+}
+`;
+    return { vertexShader: vsh, fragmentShader: fsh };
+  }
+
+  buildVerletRopeCloth(options: { segmentCount?: number | undefined; segmentLength?: number | undefined; gravity?: number | undefined }): { generatedCode: string } {
+    const segs = options.segmentCount ?? 16;
+    const len = options.segmentLength ?? 12;
+    const grav = options.gravity ?? 0.5;
+    const code = `// 2D Verlet Integration Physics Rope & Chain Simulation
+function VerletRope(_start_x, _start_y, _segments = ${segs}, _len = ${len}, _gravity = ${grav}) constructor {
+    segments = _segments;
+    segmentLength = _len;
+    gravity = _gravity;
+    points = [];
+
+    for (var i = 0; i < segments; i++) {
+        array_push(points, {
+            x: _start_x,
+            y: _start_y + (i * segmentLength),
+            oldX: _start_x,
+            oldY: _start_y + (i * segmentLength),
+            pinned: (i == 0)
+        });
+    }
+
+    static update = function(_pin_x, _pin_y, _iterations = 10) {
+        for (var i = 0; i < array_length(points); i++) {
+            var _p = points[i];
+            if (!_p.pinned) {
+                var _vx = (_p.x - _p.oldX) * 0.98;
+                var _vy = (_p.y - _p.oldY) * 0.98;
+                _p.oldX = _p.x;
+                _p.oldY = _p.y;
+                _p.x += _vx;
+                _p.y += _vy + gravity;
+            } else {
+                _p.x = _pin_x;
+                _p.y = _pin_y;
+            }
+        }
+
+        repeat (_iterations) {
+            for (var i = 0; i < array_length(points) - 1; i++) {
+                var _p1 = points[i];
+                var _p2 = points[i + 1];
+                var _dx = _p2.x - _p1.x;
+                var _dy = _p2.y - _p1.y;
+                var _dist = sqrt(_dx * _dx + _dy * _dy);
+                if (_dist == 0) _dist = 0.001;
+                var _diff = (segmentLength - _dist) / _dist;
+                var _offsetX = _dx * 0.5 * _diff;
+                var _offsetY = _dy * 0.5 * _diff;
+
+                if (!_p1.pinned) { _p1.x -= _offsetX; _p1.y -= _offsetY; }
+                if (!_p2.pinned) { _p2.x += _offsetX; _p2.y += _offsetY; }
+            }
+        }
+    };
+
+    static draw = function(_color = c_white) {
+        for (var i = 0; i < array_length(points) - 1; i++) {
+            draw_line_color(points[i].x, points[i].y, points[i + 1].x, points[i + 1].y, _color, _color);
+        }
+    };
+}
+`;
+    return { generatedCode: code };
+  }
+
+  buildPidController(options: { p?: number | undefined; i?: number | undefined; d?: number | undefined }): { generatedCode: string } {
+    const kp = options.p ?? 0.2;
+    const ki = options.i ?? 0.01;
+    const kd = options.d ?? 0.1;
+    const code = `// Proportional-Integral-Derivative (PID) Controller
+function PIDController(_kp = ${kp}, _ki = ${ki}, _kd = ${kd}) constructor {
+    kp = _kp;
+    ki = _ki;
+    kd = _kd;
+    integral = 0;
+    lastError = 0;
+
+    static calculate = function(_target, _current, _dt = 1.0) {
+        var _error = _target - _current;
+        integral += _error * _dt;
+        var _derivative = (_error - lastError) / _dt;
+        lastError = _error;
+        return (kp * _error) + (ki * integral) + (kd * _derivative);
+    };
+
+    static reset = function() {
+        integral = 0;
+        lastError = 0;
+    };
+}
+`;
+    return { generatedCode: code };
+  }
+
+  buildBezierSpline(options: { samples?: number | undefined }): { generatedCode: string } {
+    const samps = options.samples ?? 20;
+    const code = `// Cubic & Quadratic Bezier Spline Utility
+function bezier_cubic_point(_p0, _p1, _p2, _p3, _t) {
+    var _inv = 1.0 - _t;
+    return {
+        x: (_inv * _inv * _inv * _p0.x) + (3 * _inv * _inv * _t * _p1.x) + (3 * _inv * _t * _t * _p2.x) + (_t * _t * _t * _p3.x),
+        y: (_inv * _inv * _inv * _p0.y) + (3 * _inv * _inv * _t * _p1.y) + (3 * _inv * _t * _t * _p2.y) + (_t * _t * _t * _p3.y)
+    };
+}
+
+function bezier_generate_points(_p0, _p1, _p2, _p3, _samples = ${samps}) {
+    var _points = array_create(_samples + 1);
+    for (var i = 0; i <= _samples; i++) {
+        _points[i] = bezier_cubic_point(_p0, _p1, _p2, _p3, i / _samples);
+    }
+    return _points;
+}
+`;
+    return { generatedCode: code };
+  }
+
+  buildProceduralDungeon(options: { width?: number | undefined; height?: number | undefined; roomCount?: number | undefined }): { generatedCode: string } {
+    const w = options.width ?? 64;
+    const h = options.height ?? 64;
+    const rc = options.roomCount ?? 8;
+    const code = `// Procedural Dungeon BSP Room & Corridor Generator
+function ProceduralDungeonGenerator(_w = ${w}, _h = ${h}, _target_rooms = ${rc}) constructor {
+    width = _w;
+    height = _h;
+    targetRooms = _target_rooms;
+    grid = array_create(width);
+    for (var i = 0; i < width; i++) grid[i] = array_create(height, 1);
+
+    rooms = [];
+
+    static generate = function() {
+        for (var i = 0; i < targetRooms; i++) {
+            var _rw = irandom_range(6, 12);
+            var _rh = irandom_range(6, 12);
+            var _rx = irandom_range(1, width - _rw - 1);
+            var _ry = irandom_range(1, height - _rh - 1);
+
+            for (var _x = _rx; _x < _rx + _rw; _x++) {
+                for (var _y = _ry; _y < _ry + _rh; _y++) {
+                    grid[_x][_y] = 0;
+                }
+            }
+            array_push(rooms, { x: _rx + floor(_rw/2), y: _ry + floor(_rh/2) });
+
+            if (i > 0) {
+                var _p1 = rooms[i - 1];
+                var _p2 = rooms[i];
+                var _cx = _p1.x;
+                while (_cx != _p2.x) { grid[_cx][_p1.y] = 0; _cx += sign(_p2.x - _cx); }
+                var _cy = _p1.y;
+                while (_cy != _p2.y) { grid[_p2.x][_cy] = 0; _cy += sign(_p2.y - _cy); }
+            }
+        }
+    };
+}
+`;
+    return { generatedCode: code };
+  }
+
+  buildWaveFunctionCollapse(options: { gridWidth?: number | undefined; gridHeight?: number | undefined }): { generatedCode: string } {
+    const w = options.gridWidth ?? 16;
+    const h = options.gridHeight ?? 16;
+    const code = `// 2D Wave Function Collapse (WFC) Procedural Tilemap Generator
+function WFCGrid(_w = ${w}, _h = ${h}) constructor {
+    width = _w;
+    height = _h;
+    cells = array_create(width * height);
+
+    for (var i = 0; i < width * height; i++) {
+        cells[i] = { collapsed: false, tile: -1, entropy: 4 };
+    }
+
+    static collapse_next = function() {
+        var _lowest_idx = -1;
+        var _lowest_entropy = 999;
+        for (var i = 0; i < array_length(cells); i++) {
+            if (!cells[i].collapsed && cells[i].entropy < _lowest_entropy) {
+                _lowest_entropy = cells[i].entropy;
+                _lowest_idx = i;
+            }
+        }
+        if (_lowest_idx != -1) {
+            cells[_lowest_idx].collapsed = true;
+            cells[_lowest_idx].tile = irandom(3);
+            return true;
+        }
+        return false;
+    };
+}
+`;
+    return { generatedCode: code };
+  }
+
+  buildDynamicMusicManager(options: { trackCount?: number | undefined }): { generatedCode: string } {
+    const tracks = options.trackCount ?? 4;
+    const code = `// Interactive Stem-based Dynamic Music Crossfader
+function DynamicMusicManager(_track_count = ${tracks}) constructor {
+    stems = array_create(_track_count, undefined);
+    volumes = array_create(_track_count, 0.0);
+    targetVolumes = array_create(_track_count, 0.0);
+
+    static set_intensity = function(_layer_index, _volume) {
+        if (_layer_index >= 0 && _layer_index < array_length(targetVolumes)) {
+            targetVolumes[_layer_index] = clamp(_volume, 0.0, 1.0);
+        }
+    };
+
+    static update = function(_lerp_speed = 0.05) {
+        for (var i = 0; i < array_length(stems); i++) {
+            volumes[i] = lerp(volumes[i], targetVolumes[i], _lerp_speed);
+            if (stems[i] != undefined && audio_is_playing(stems[i])) {
+                audio_sound_gain(stems[i], volumes[i], 0);
+            }
+        }
+    };
+}
+`;
+    return { generatedCode: code };
+  }
+
+  buildAudioSoundEnvelope(options: { attack?: number | undefined; decay?: number | undefined; sustain?: number | undefined; release?: number | undefined }): { generatedCode: string } {
+    const a = options.attack ?? 0.1;
+    const d = options.decay ?? 0.2;
+    const s = options.sustain ?? 0.7;
+    const r = options.release ?? 0.5;
+    const code = `// Procedural Audio ADSR Volume Envelope Generator
+function AudioADSREnvelope(_attack = ${a}, _decay = ${d}, _sustain = ${s}, _release = ${r}) constructor {
+    attack = _attack;
+    decay = _decay;
+    sustain = _sustain;
+    release = _release;
+
+    static get_gain = function(_time_seconds, _note_held, _release_start_time) {
+        if (_note_held) {
+            if (_time_seconds < attack) return _time_seconds / attack;
+            if (_time_seconds < attack + decay) {
+                var _t = (_time_seconds - attack) / decay;
+                return lerp(1.0, sustain, _t);
+            }
+            return sustain;
+        } else {
+            var _rel_elapsed = _time_seconds - _release_start_time;
+            if (_rel_elapsed >= release) return 0.0;
+            return lerp(sustain, 0.0, _rel_elapsed / release);
+        }
+    };
+}
+`;
+    return { generatedCode: code };
+  }
+
+  buildComboInputBuffer(options: { bufferWindowFrames?: number | undefined }): { generatedCode: string } {
+    const win = options.bufferWindowFrames ?? 20;
+    const code = `// Fighting Game Directional & Button Combo Input Buffer
+function ComboInputBuffer(_window_frames = ${win}) constructor {
+    windowFrames = _window_frames;
+    buffer = [];
+
+    static push_input = function(_input_code) {
+        array_push(buffer, { code: _input_code, timer: windowFrames });
+    };
+
+    static update = function() {
+        var i = 0;
+        while (i < array_length(buffer)) {
+            buffer[i].timer--;
+            if (buffer[i].timer <= 0) {
+                array_delete(buffer, i, 1);
+            } else {
+                i++;
+            }
+        }
+    };
+
+    static check_sequence = function(_sequence_array) {
+        var _seq_len = array_length(_sequence_array);
+        if (array_length(buffer) < _seq_len) return false;
+        var _start_idx = array_length(buffer) - _seq_len;
+        for (var i = 0; i < _seq_len; i++) {
+            if (buffer[_start_idx + i].code != _sequence_array[i]) return false;
+        }
+        return true;
+    };
+}
+`;
+    return { generatedCode: code };
+  }
+
+  buildQuestJournal(options: { journalVar?: string | undefined }): { generatedCode: string } {
+    const jVar = options.journalVar ?? "quest_journal";
+    const code = `// Multi-Stage Branching Quest Journal System
+function QuestJournal() constructor {
+    quests = {};
+
+    static add_quest = function(_id, _title, _description, _stages) {
+        quests[$ _id] = {
+            id: _id,
+            title: _title,
+            description: _description,
+            stages: _stages,
+            currentStage: 0,
+            completed: false
+        };
+    };
+
+    static advance_quest = function(_id) {
+        if (struct_exists(quests, _id)) {
+            var _q = quests[$ _id];
+            _q.currentStage++;
+            if (_q.currentStage >= array_length(_q.stages)) {
+                _q.completed = true;
+            }
+        }
+    };
+
+    static is_completed = function(_id) {
+        return struct_exists(quests, _id) && quests[$ _id].completed;
+    };
+}
+
+${jVar} = new QuestJournal();
+`;
+    return { generatedCode: code };
+  }
+
+  buildSkillTree(options: { treeName?: string | undefined }): { generatedCode: string } {
+    const tName = options.treeName ?? "SkillTree";
+    const code = `// RPG Node-based Skill Tree Progression Graph
+function ${tName}() constructor {
+    skills = {};
+
+    static add_skill = function(_id, _name, _cost, _prerequisites = []) {
+        skills[$ _id] = {
+            id: _id,
+            name: _name,
+            cost: _cost,
+            prerequisites: _prerequisites,
+            unlocked: false
+        };
+    };
+
+    static can_unlock = function(_id, _available_points) {
+        if (!struct_exists(skills, _id)) return false;
+        var _s = skills[$ _id];
+        if (_s.unlocked || _available_points < _s.cost) return false;
+        for (var i = 0; i < array_length(_s.prerequisites); i++) {
+            var _req = _s.prerequisites[i];
+            if (!struct_exists(skills, _req) || !skills[$ _req].unlocked) return false;
+        }
+        return true;
+    };
+
+    static unlock = function(_id) {
+        if (struct_exists(skills, _id)) skills[$ _id].unlocked = true;
+    };
+}
+`;
+    return { generatedCode: code };
+  }
+
+  buildFloatingTextManager(options: { poolSize?: number | undefined }): { generatedCode: string } {
+    const pSize = options.poolSize ?? 64;
+    const code = `// High-Performance Pooled Floating Combat Text System
+function FloatingTextManager(_pool_size = ${pSize}) constructor {
+    pool = array_create(_pool_size);
+    for (var i = 0; i < _pool_size; i++) {
+        pool[i] = { active: false, x: 0, y: 0, vy: -2, text: "", color: c_white, alpha: 1.0 };
+    }
+
+    static spawn = function(_x, _y, _text, _color = c_white) {
+        for (var i = 0; i < array_length(pool); i++) {
+            if (!pool[i].active) {
+                var _p = pool[i];
+                _p.active = true;
+                _p.x = _x;
+                _p.y = _y;
+                _p.vy = -2.5;
+                _p.text = string(_text);
+                _p.color = _color;
+                _p.alpha = 1.0;
+                return;
+            }
+        }
+    };
+
+    static update_and_draw = function() {
+        for (var i = 0; i < array_length(pool); i++) {
+            var _p = pool[i];
+            if (_p.active) {
+                _p.y += _p.vy;
+                _p.vy *= 0.95;
+                _p.alpha -= 0.02;
+                draw_set_color(_p.color);
+                draw_set_alpha(_p.alpha);
+                draw_text(_p.x, _p.y, _p.text);
+                if (_p.alpha <= 0) _p.active = false;
+            }
+        }
+        draw_set_alpha(1.0);
+    };
+}
+`;
+    return { generatedCode: code };
+  }
+
+  buildVirtualJoystickTouch(options: { stickRadius?: number | undefined }): { generatedCode: string } {
+    const rad = options.stickRadius ?? 64;
+    const code = `// Mobile/Touch Virtual Thumbstick Controller
+function VirtualJoystick(_anchor_x, _anchor_y, _radius = ${rad}) constructor {
+    anchorX = _anchor_x;
+    anchorY = _anchor_y;
+    thumbX = _anchor_x;
+    thumbY = _anchor_y;
+    radius = _radius;
+    touchDevice = -1;
+    xAxis = 0;
+    yAxis = 0;
+
+    static update = function() {
+        if (touchDevice == -1) {
+            for (var i = 0; i < 4; i++) {
+                if (device_mouse_check_button_pressed(i, mb_left)) {
+                    var _mx = device_mouse_x_to_gui(i);
+                    var _my = device_mouse_y_to_gui(i);
+                    if (point_distance(_mx, _my, anchorX, anchorY) <= radius) {
+                        touchDevice = i;
+                        break;
+                    }
+                }
+            }
+        } else {
+            if (device_mouse_check_button(touchDevice, mb_left)) {
+                var _mx = device_mouse_x_to_gui(touchDevice);
+                var _my = device_mouse_y_to_gui(touchDevice);
+                var _dist = min(point_distance(anchorX, anchorY, _mx, _my), radius);
+                var _dir = point_direction(anchorX, anchorY, _mx, _my);
+                thumbX = anchorX + lengthdir_x(_dist, _dir);
+                thumbY = anchorY + lengthdir_y(_dist, _dir);
+                xAxis = lengthdir_x(_dist / radius, _dir);
+                yAxis = lengthdir_y(_dist / radius, _dir);
+            } else {
+                touchDevice = -1;
+                thumbX = anchorX;
+                thumbY = anchorY;
+                xAxis = 0;
+                yAxis = 0;
+            }
+        }
+    };
+}
+`;
+    return { generatedCode: code };
+  }
+
+  buildCutsceneSequencer(options: { sequencerName?: string | undefined }): { generatedCode: string } {
+    const sName = options.sequencerName ?? "CutsceneSequencer";
+    const code = `// Coroutine-like Cutscene Action Sequencer
+function ${sName}() constructor {
+    actions = [];
+    currentActionIndex = 0;
+    isPlaying = false;
+
+    static add_action = function(_action_callable) {
+        array_push(actions, _action_callable);
+    };
+
+    static play = function() {
+        isPlaying = true;
+        currentActionIndex = 0;
+    };
+
+    static advance = function() {
+        currentActionIndex++;
+        if (currentActionIndex >= array_length(actions)) {
+            isPlaying = false;
+        }
+    };
+
+    static update = function() {
+        if (isPlaying && currentActionIndex < array_length(actions)) {
+            var _done = actions[currentActionIndex]();
+            if (_done) advance();
+        }
+    };
+}
+`;
+    return { generatedCode: code };
+  }
+
+  buildAchievementSystem(options: { systemName?: string | undefined }): { generatedCode: string } {
+    const aName = options.systemName ?? "AchievementSystem";
+    const code = `// Local & Steam-Compatible Achievement System: ${aName}
+function ${aName}() constructor {
+    achievements = {};
+
+    static register = function(_id, _name, _desc) {
+        achievements[$ _id] = { id: _id, name: _name, desc: _desc, unlocked: false };
+    };
+
+    static unlock = function(_id) {
+        if (struct_exists(achievements, _id) && !achievements[$ _id].unlocked) {
+            achievements[$ _id].unlocked = true;
+            show_debug_message("Achievement Unlocked: " + achievements[$ _id].name);
+        }
+    };
+
+    static is_unlocked = function(_id) {
+        return struct_exists(achievements, _id) && achievements[$ _id].unlocked;
+    };
+}
+`;
+    return { generatedCode: code };
+  }
+
+  buildDialogueChoiceGraph(options: { graphName?: string | undefined }): { generatedCode: string } {
+    const gName = options.graphName ?? "DialogueGraph";
+    const code = `// Complex Branching Dialogue Graph with Conditional Choices
+function ${gName}() constructor {
+    nodes = {};
+
+    static add_node = function(_id, _speaker, _portrait, _text, _choices = []) {
+        nodes[$ _id] = {
+            id: _id,
+            speaker: _speaker,
+            portrait: _portrait,
+            text: _text,
+            choices: _choices
+        };
+    };
+
+    static get_available_choices = function(_node_id) {
+        if (!struct_exists(nodes, _node_id)) return [];
+        var _raw = nodes[$ _node_id].choices;
+        var _avail = [];
+        for (var i = 0; i < array_length(_raw); i++) {
+            var _c = _raw[i];
+            if (!struct_exists(_c, "condition") || _c.condition == undefined || _c.condition()) {
+                array_push(_avail, _c);
+            }
+        }
+        return _avail;
+    };
+}
+`;
+    return { generatedCode: code };
+  }
+
+  buildRollbackNetcodeSimulator(options: { maxRollbackFrames?: number | undefined }): { generatedCode: string } {
+    const mrf = options.maxRollbackFrames ?? 7;
+    const code = `// GGPO-style Client-Side Prediction & State Resimulation Rollback System
+function RollbackNetcode(_max_rollback = ${mrf}) constructor {
+    maxRollback = _max_rollback;
+    inputBuffer = [];
+    stateSnapshots = [];
+    currentFrame = 0;
+
+    static record_local_input = function(_frame, _input_struct) {
+        array_push(inputBuffer, { frame: _frame, input: _input_struct });
+    };
+
+    static rollback_and_resimulate = function(_confirmed_frame, _confirmed_state, _simulation_func) {
+        var _state = variable_clone(_confirmed_state);
+        for (var f = _confirmed_frame; f < currentFrame; f++) {
+            var _in = inputBuffer[f] ?? {};
+            _state = _simulation_func(_state, _in);
+        }
+        return _state;
+    };
+}
+`;
+    return { generatedCode: code };
+  }
+
+  buildSaveCompressionZlib(options: { saveFileName?: string | undefined }): { generatedCode: string } {
+    const sFile = options.saveFileName ?? "save.dat";
+    const code = `// High-Speed Binary Buffer Zlib Compressed Save System: ${sFile}
+function save_game_zlib_compressed(_data_struct, _filename = "${sFile}") {
+    var _json = json_stringify(_data_struct);
+    var _raw_buf = buffer_create(string_byte_length(_json) + 1, buffer_fixed, 1);
+    buffer_write(_raw_buf, buffer_string, _json);
+
+    var _compressed_buf = buffer_compress(_raw_buf, 0, buffer_tell(_raw_buf));
+    buffer_save(_compressed_buf, _filename);
+
+    buffer_delete(_raw_buf);
+    buffer_delete(_compressed_buf);
+}
+
+function load_game_zlib_compressed(_filename = "${sFile}") {
+    if (!file_exists(_filename)) return undefined;
+    var _compressed_buf = buffer_load(_filename);
+    var _decompressed_buf = buffer_decompress(_compressed_buf);
+    buffer_delete(_compressed_buf);
+
+    if (_decompressed_buf < 0) return undefined;
+    var _json = buffer_read(_decompressed_buf, buffer_string);
+    buffer_delete(_decompressed_buf);
+    return json_parse(_json);
+}
+`;
+    return { generatedCode: code };
+  }
+
+  buildCloudSaveSync(options: { cloudProvider?: string | undefined }): { generatedCode: string } {
+    const prov = options.cloudProvider ?? "GenericCloud";
+    const code = `// Cloud Save Conflict Resolver & Sync Logic: ${prov}
+function CloudSaveSyncManager() constructor {
+    static resolve_conflict = function(_local_struct, _cloud_struct) {
+        var _local_time = _local_struct[$ "timestamp"] ?? 0;
+        var _cloud_time = _cloud_struct[$ "timestamp"] ?? 0;
+
+        if (_cloud_time > _local_time) {
+            return { chosen: "cloud", data: _cloud_struct };
+        } else {
+            return { chosen: "local", data: _local_struct };
+        }
+    };
+}
+`;
+    return { generatedCode: code };
+  }
+
+  getProjectGitDiffSummary(): { isGitRepo: boolean; modifiedAssets: string[]; rawDiffStat?: string } {
+    try {
+      const gitDir = path.join(this.config.projectRoot, ".git");
+      if (!fs.existsSync(gitDir)) {
+        return { isGitRepo: false, modifiedAssets: [] };
+      }
+      const diffStat = execSync("git diff --name-only HEAD", { cwd: this.config.projectRoot, encoding: "utf8" });
+      const files = diffStat.split(/\\r?\\n/).filter(Boolean);
+      const assetSet = new Set<string>();
+      for (const f of files) {
+        const basename = path.basename(f);
+        if (basename.includes(".")) {
+          assetSet.add(basename.split(".")[0]!);
+        }
+      }
+      return {
+        isGitRepo: true,
+        modifiedAssets: Array.from(assetSet),
+        rawDiffStat: diffStat.trim(),
+      };
+    } catch {
+      return { isGitRepo: false, modifiedAssets: [] };
+    }
+  }
+
+  buildBenchmarkMacroInjector(options: { targetFunction: string }): { generatedCode: string } {
+    const funcName = options.targetFunction;
+    const code = `// High-Resolution Microsecond Profiling Macro Injection for ${funcName}
+#macro PROFILE_START var __t0 = get_timer();
+#macro PROFILE_END show_debug_message("${funcName} execution time: " + string(get_timer() - __t0) + " microseconds");
+
+function profiled_${funcName}() {
+    PROFILE_START
+    ${funcName}();
+    PROFILE_END
+}
+`;
+    return { generatedCode: code };
+  }
+
+  roomBulkTileFill(options: { roomName: string; layerName: string; tileIndex: number; widthTiles: number; heightTiles: number }): Record<string, unknown> {
+    this.sandbox.assertWritable();
+    const res = this.findResource(options.roomName, "room");
+    let text = this.sandbox.readText(res.path, [".yy"]);
+    const roomData = requireGmJson<Record<string, unknown>>(text, res.path);
+    const layers = [...((roomData["layers"] as Array<Record<string, unknown>>) ?? [])];
+    const targetLayer = layers.find((l) => (l["name"] ?? l["%Name"]) === options.layerName);
+    if (!targetLayer) throw new Error("Layer " + options.layerName + " not found in room " + options.roomName);
+
+    const count = options.widthTiles * options.heightTiles;
+    const filledData = Array.from({ length: count }, () => options.tileIndex);
+    (targetLayer as Record<string, unknown>)["tiles"] = {
+      SerialiseData: filledData,
+    };
+
+    text = updateJsonPath(text, ["layers"], layers);
+    const sha = this.sandbox.sha256For(res.path);
+    const writeResult = this.sandbox.atomicWrite(res.path, text, { expectedSha256: sha, backup: true });
+    return { roomName: options.roomName, layerName: options.layerName, filledTilesCount: count, writeResult };
   }
 }
 

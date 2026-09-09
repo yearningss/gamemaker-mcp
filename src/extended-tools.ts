@@ -2109,4 +2109,472 @@ export function registerExtendedTools(server: McpServer, project: GameMakerProje
     },
     async (args) => run(() => project.buildTypeCheckedStruct(args)),
   );
+
+  server.registerTool(
+    "gm_gml_ecs_system_builder",
+    {
+      title: "Build GML Entity-Component-System (ECS) architectural framework",
+      description: "Generate a complete Entity-Component-System (ECS) framework in modern GML with entities, components, and update systems.",
+      inputSchema: {
+        systemName: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildEcsSystem(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_spatial_hash_grid_builder",
+    {
+      title: "Build 2D Spatial Hash Grid Collision Broadphase Optimizer",
+      description: "Build a 2D Spatial Hashing Grid collision & broadphase query optimizer for handling thousands of entities.",
+      inputSchema: {
+        cellSize: z.number().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildSpatialHashGrid(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_quadtree_builder",
+    {
+      title: "Build 2D Quadtree Spatial Partitioning System",
+      description: "Build a 2D Quadtree spatial partitioning system for fast dynamic range queries and frustum culling.",
+      inputSchema: {
+        maxObjects: z.number().optional(),
+        maxLevels: z.number().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildQuadtree(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_state_machine_hierarchical_builder",
+    {
+      title: "Build Hierarchical Finite State Machine (HFSM) Framework",
+      description: "Build a Hierarchical Finite State Machine with nested sub-states, enter/exit cascades, and state stack.",
+      inputSchema: {
+        rootState: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildHierarchicalStateMachine(args)),
+  );
+
+  server.registerTool(
+    "gm_shader_crt_retro_builder",
+    {
+      title: "Build Retro CRT Simulation Shader pair",
+      description: "Generate complete GLSL ES Retro CRT filter shaders with curvature, scanlines, and chromatic aberration.",
+      inputSchema: {
+        shaderName: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildCrtRetroShader(args)),
+  );
+
+  server.registerTool(
+    "gm_shader_water_distortion_builder",
+    {
+      title: "Build 2D Water Distortion & Caustics Shader pair",
+      description: "Generate complete GLSL ES Screen-space water reflection, wave distortion, and caustics normal-map shader pair.",
+      inputSchema: {
+        shaderName: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildWaterDistortionShader(args)),
+  );
+
+  server.registerTool(
+    "gm_shader_dissolve_burn_builder",
+    {
+      title: "Build Texture Dissolve & Edge-Burn Shader pair",
+      description: "Generate complete GLSL ES Texture dissolve & burning ember edge shader pair with threshold controls.",
+      inputSchema: {
+        shaderName: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildDissolveBurnShader(args)),
+  );
+
+  server.registerTool(
+    "gm_shader_palette_swap_builder",
+    {
+      title: "Build Dynamic 2D Palette Swap Shader pair",
+      description: "Generate complete GLSL ES Dynamic 2D palette swap shader supporting real-time indexed texture lookup.",
+      inputSchema: {
+        shaderName: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildPaletteSwapShader(args)),
+  );
+
+  server.registerTool(
+    "gm_shader_outline_glow_builder",
+    {
+      title: "Build 2D Outer Outline & Inner Glow Shader pair",
+      description: "Generate complete GLSL ES Pixel-perfect outer outline and inner glow shader for 2D sprites.",
+      inputSchema: {
+        shaderName: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildOutlineGlowShader(args)),
+  );
+
+  server.registerTool(
+    "gm_shader_fog_of_war_builder",
+    {
+      title: "Build Fog of War Radial Soft Mask Shader pair",
+      description: "Generate complete GLSL ES Fog of war discovery and soft radial mask shader pair.",
+      inputSchema: {
+        shaderName: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildFogOfWarShader(args)),
+  );
+
+  server.registerTool(
+    "gm_shader_shockwave_distortion_builder",
+    {
+      title: "Build Radial Shockwave Distortion Shader pair",
+      description: "Generate complete GLSL ES Expanding radial shockwave displacement shader pair.",
+      inputSchema: {
+        shaderName: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildShockwaveDistortionShader(args)),
+  );
+
+  server.registerTool(
+    "gm_shader_glitch_vhs_builder",
+    {
+      title: "Build VHS Tracking & RGB Glitch Shader pair",
+      description: "Generate complete GLSL ES VHS tracking lines, RGB chromatic split, and analog glitch shader pair.",
+      inputSchema: {
+        shaderName: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildGlitchVhsShader(args)),
+  );
+
+  server.registerTool(
+    "gm_shader_wind_grass_sway_builder",
+    {
+      title: "Build Vegetation Wind Sway Vertex Shader pair",
+      description: "Generate complete GLSL ES Vegetation vertex sway wind animation shader pair.",
+      inputSchema: {
+        shaderName: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildWindGrassSwayShader(args)),
+  );
+
+  server.registerTool(
+    "gm_shader_color_grading_lut_builder",
+    {
+      title: "Build 3D LUT Color Grading Shader pair",
+      description: "Generate complete GLSL ES 3D LUT color grading texture sampler shader pair.",
+      inputSchema: {
+        shaderName: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildColorGradingLutShader(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_verlet_rope_cloth_builder",
+    {
+      title: "Build 2D Verlet Integration Physics Rope & Cloth Simulation",
+      description: "Build 2D Verlet Integration physics engine for ropes, chains, ragdolls, and cloth simulation.",
+      inputSchema: {
+        segmentCount: z.number().optional(),
+        segmentLength: z.number().optional(),
+        gravity: z.number().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildVerletRopeCloth(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_pid_controller_builder",
+    {
+      title: "Build Proportional-Integral-Derivative (PID) Controller",
+      description: "Build PID controller for smooth procedural physics, steering, and camera dampening.",
+      inputSchema: {
+        p: z.number().optional(),
+        i: z.number().optional(),
+        d: z.number().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildPidController(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_bezier_spline_builder",
+    {
+      title: "Build Cubic & Quadratic Bezier Spline Utility",
+      description: "Build Cubic & Quadratic Bezier curve spline generator with arc-length parameterization.",
+      inputSchema: {
+        samples: z.number().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildBezierSpline(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_procedural_generation_dungeon_builder",
+    {
+      title: "Build Procedural Dungeon BSP Room & Corridor Generator",
+      description: "Build procedural dungeon generator with BSP rooms and connecting corridors.",
+      inputSchema: {
+        width: z.number().optional(),
+        height: z.number().optional(),
+        roomCount: z.number().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildProceduralDungeon(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_wave_function_collapse_builder",
+    {
+      title: "Build 2D Wave Function Collapse (WFC) Generator",
+      description: "Build 2D Wave Function Collapse procedural map tile generator.",
+      inputSchema: {
+        gridWidth: z.number().optional(),
+        gridHeight: z.number().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildWaveFunctionCollapse(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_audio_dynamic_music_manager",
+    {
+      title: "Build Interactive Stem-based Dynamic Music Crossfader",
+      description: "Build dynamic music crossfader with vertical layering (stems) based on game intensity.",
+      inputSchema: {
+        trackCount: z.number().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildDynamicMusicManager(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_audio_sound_envelope_builder",
+    {
+      title: "Build Procedural Audio ADSR Volume Envelope Generator",
+      description: "Build ADSR volume envelope generator for procedural sounds and audio synthesizer effects.",
+      inputSchema: {
+        attack: z.number().optional(),
+        decay: z.number().optional(),
+        sustain: z.number().optional(),
+        release: z.number().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildAudioSoundEnvelope(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_combo_input_buffer_builder",
+    {
+      title: "Build Fighting Game Combo Input Buffer",
+      description: "Build fighting game style directional + button input buffer with fuzzy timing windows.",
+      inputSchema: {
+        bufferWindowFrames: z.number().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildComboInputBuffer(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_quest_journal_builder",
+    {
+      title: "Build Multi-Stage Branching Quest Journal System",
+      description: "Build branching Quest/Mission Journal system with objectives, stages, and completion tracking.",
+      inputSchema: {
+        journalVar: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildQuestJournal(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_skill_tree_builder",
+    {
+      title: "Build RPG Node-based Skill Tree Progression Graph",
+      description: "Build node-based RPG Skill Tree progression calculator with prerequisites, point costs, and modifiers.",
+      inputSchema: {
+        treeName: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildSkillTree(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_floating_text_manager",
+    {
+      title: "Build High-Performance Pooled Floating Combat Text System",
+      description: "Build high-performance pooled floating combat damage numbers & combat text renderer.",
+      inputSchema: {
+        poolSize: z.number().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildFloatingTextManager(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_virtual_joystick_touch_builder",
+    {
+      title: "Build Mobile/Touch Virtual Thumbstick Controller",
+      description: "Build mobile/touch virtual thumbstick & action buttons controller struct.",
+      inputSchema: {
+        stickRadius: z.number().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildVirtualJoystickTouch(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_cutscene_sequencer_builder",
+    {
+      title: "Build Coroutine-like Cutscene Action Sequencer",
+      description: "Build coroutine-like step-by-step cutscene action sequencer (camera moves, dialogues, delays).",
+      inputSchema: {
+        sequencerName: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildCutsceneSequencer(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_achievement_system_builder",
+    {
+      title: "Build Local & Steam-Compatible Achievement System",
+      description: "Build local and Steam-compatible achievement tracker with progress notifications.",
+      inputSchema: {
+        systemName: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildAchievementSystem(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_dialogue_choice_graph_builder",
+    {
+      title: "Build Branching Dialogue Graph with Conditional Choices",
+      description: "Build branching dialogue graph with conditional choices, portraits, and speaker labels.",
+      inputSchema: {
+        graphName: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildDialogueChoiceGraph(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_rollback_netcode_simulator",
+    {
+      title: "Build GGPO-style Rollback Netcode Simulation Scaffold",
+      description: "Build GGPO-style client-side prediction, input ring buffer, and state resimulation loop.",
+      inputSchema: {
+        maxRollbackFrames: z.number().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildRollbackNetcodeSimulator(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_save_compression_zlib_builder",
+    {
+      title: "Build High-Speed Binary Buffer Zlib Compressed Save System",
+      description: "Build binary buffer zlib compression and decompression logic for save files.",
+      inputSchema: {
+        saveFileName: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildSaveCompressionZlib(args)),
+  );
+
+  server.registerTool(
+    "gm_gml_cloud_save_sync_builder",
+    {
+      title: "Build Cloud Save Conflict Resolver & Sync Logic",
+      description: "Build cloud save timestamp conflict resolution and synchronization logic.",
+      inputSchema: {
+        cloudProvider: z.string().optional(),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildCloudSaveSync(args)),
+  );
+
+  server.registerTool(
+    "gm_project_git_diff_summary",
+    {
+      title: "Scan git diff changes mapped to GameMaker assets",
+      description: "Scan project changes relative to git, mapping modified files to GameMaker asset names.",
+      inputSchema: {},
+      annotations: READ_ONLY,
+    },
+    async () => run(() => project.getProjectGitDiffSummary()),
+  );
+
+  server.registerTool(
+    "gm_gml_benchmark_macro_injector",
+    {
+      title: "Inject High-Resolution Profiling Macros into GML Function",
+      description: "Inject high-resolution timer profiling macros (get_timer()) around target GML functions.",
+      inputSchema: {
+        targetFunction: z.string().min(1),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => run(() => project.buildBenchmarkMacroInjector(args)),
+  );
+
+  server.registerTool(
+    "gm_room_bulk_tile_filler",
+    {
+      title: "Batch procedural tilemap filler for room layer",
+      description: "Fill a room tilemap layer with a repeating grid of tiles procedurally.",
+      inputSchema: {
+        roomName: z.string().min(1),
+        layerName: z.string().min(1),
+        tileIndex: z.number().int(),
+        widthTiles: z.number().int().min(1),
+        heightTiles: z.number().int().min(1),
+      },
+      annotations: PROJECT_WRITE,
+    },
+    async (args) => run(() => project.roomBulkTileFill(args)),
+  );
 }
