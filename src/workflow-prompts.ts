@@ -262,8 +262,7 @@ export function registerWorkflowPrompts(server: McpServer): void {
             type: "text",
             text:
               `Build a 2D Additive Lighting and Dynamic Shadow system${systemName ? ` for ${systemName}` : ""}. ` +
-              "Use gm_gml_light_shadow_2d_builder for GML struct rendering code, gm_gml_light_shadow_2d_shader_builder " +
-              "for vertex and fragment shaders, write the shader with gm_shader_create, validate with gm_project_validate, and compile.",
+              "Write the GML rendering structs and vertex and fragment shader sources directly, write the shader with gm_shader_create, validate with gm_project_validate, and compile.",
           },
         },
       ],
@@ -285,7 +284,7 @@ export function registerWorkflowPrompts(server: McpServer): void {
             type: "text",
             text:
               `Build a full Inventory system with Drag-and-Drop UI${slotCount ? ` (${slotCount} slots)` : ""}. ` +
-              "Call gm_inventory_system_generate for database logic, gm_gml_inventory_drag_drop_ui_builder for UI slot dragging, " +
+              "Use gm_inventory_system_generate for database logic and write the UI slot dragging code directly, " +
               "write the GML script with gm_script_create, and validate with gm_project_validate.",
           },
         },
@@ -307,9 +306,8 @@ export function registerWorkflowPrompts(server: McpServer): void {
           content: {
             type: "text",
             text:
-              "Audit legacy Data Structures across the project. Use gm_gml_ds_to_struct_converter, gm_gml_ds_grid_to_array2d_converter, " +
-              "gm_gml_ds_list_to_array_converter, gm_gml_ds_map_to_struct_converter, and gm_gml_ds_priority_to_array_converter " +
-              `to replace manual memory management with automatic Garbage Collector arrays and structs.${focusVariable ? ` Focus on ${focusVariable}.` : ""}`,
+              "Audit legacy Data Structures across the project. Inspect DS usage and write replacements directly " +
+              `using garbage-collected arrays and structs.${focusVariable ? ` Focus on ${focusVariable}.` : ""}`,
           },
         },
       ],
@@ -331,7 +329,7 @@ export function registerWorkflowPrompts(server: McpServer): void {
             type: "text",
             text:
               `Build an AI Behavior Tree system${treeName ? ` named ${treeName}` : ""}. ` +
-              "Call gm_gml_behavior_tree_builder to generate Selector, Sequence, and Action node structs, " +
+              "Write Selector, Sequence, and Action node structs, " +
               "write script with gm_script_create, preflight with gm_gml_validate_snippet, and run gm_project_validate.",
           },
         },
@@ -354,7 +352,7 @@ export function registerWorkflowPrompts(server: McpServer): void {
             type: "text",
             text:
               "Scan project for hardcoded UI strings using gm_i18n_extract_strings. " +
-              `Call gm_gml_localization_csv_builder to generate CSV parser and translator struct code${defaultLanguage ? ` (default language: ${defaultLanguage})` : ""}, ` +
+              `Write CSV parser and translator struct code${defaultLanguage ? ` (default language: ${defaultLanguage})` : ""}, ` +
               "write translation file with gm_datafile_create, and validate with gm_project_validate.",
           },
         },
@@ -400,8 +398,8 @@ export function registerWorkflowPrompts(server: McpServer): void {
             type: "text",
             text:
               `Setup an Encrypted JSON Save/Load system${fileName ? ` (${fileName})` : ""}. ` +
-              "Call gm_gml_save_load_json_encrypted_builder to generate buffer string encoder, salted MD5 hash checksum validation, " +
-              "and save state rollback support using gm_gml_save_state_rollback_builder.",
+              "Write buffer string encoder, salted MD5 hash checksum validation, " +
+              "and save state rollback support using direct GML code generation.",
           },
         },
       ],
@@ -423,7 +421,7 @@ export function registerWorkflowPrompts(server: McpServer): void {
             type: "text",
             text:
               "Build a 2.5D Isometric Depth Sorting render pipeline. " +
-              `Call gm_gml_render_pipeline_depth_sort_builder${enableZBuffer ? ` with enableZBuffer=${enableZBuffer}` : ""}, ` +
+              `Call direct GML code generation${enableZBuffer ? ` with enableZBuffer=${enableZBuffer}` : ""}, ` +
               "write render controller script with gm_script_create, and validate with gm_project_validate.",
           },
         },
@@ -446,7 +444,7 @@ export function registerWorkflowPrompts(server: McpServer): void {
             type: "text",
             text:
               `Generate a node-based Branching Dialogue Tree system${systemName ? ` (${systemName})` : ""}. ` +
-              "Call gm_gml_dialogue_tree_generator, write dialogue manager script with gm_script_create, " +
+              "Write the GML implementation directly, write dialogue manager script with gm_script_create, " +
               "validate snippet with gm_gml_validate_snippet, and test with gm_project_validate.",
           },
         },
@@ -469,7 +467,7 @@ export function registerWorkflowPrompts(server: McpServer): void {
             type: "text",
             text:
               `Build binary Network Packet Buffer encoder and decoder for packet '${packetName}'. ` +
-              "Call gm_gml_network_packet_buffer_builder with fields array (u8, u16, u32, f32, string), " +
+              "Call direct GML code generation with fields array (u8, u16, u32, f32, string), " +
               "write packet script with gm_script_create, and validate project structure with gm_project_validate.",
           },
         },
@@ -492,7 +490,7 @@ export function registerWorkflowPrompts(server: McpServer): void {
             type: "text",
             text:
               `Scaffold high-performance ECS architecture${worldName ? ` for world '${worldName}'` : ""}. ` +
-              "Call gm_gml_ecs_system_builder to generate ECSWorld struct, write controller script with gm_script_create, " +
+              "Write ECSWorld struct, write controller script with gm_script_create, " +
               "and inspect syntax with gm_gml_validate_snippet.",
           },
         },
@@ -515,7 +513,7 @@ export function registerWorkflowPrompts(server: McpServer): void {
             type: "text",
             text:
               `Setup procedural dungeon generator${roomCount ? ` targeting ${roomCount} rooms` : ""}. ` +
-              "Call gm_gml_procedural_generation_dungeon_builder to generate BSP generator struct, " +
+              "Write BSP generator struct, " +
               "write generation script with gm_script_create, and validate project with gm_project_validate.",
           },
         },
@@ -538,7 +536,7 @@ export function registerWorkflowPrompts(server: McpServer): void {
             type: "text",
             text:
               `Scaffold retro CRT post-processing shader pipeline${shaderName ? ` as '${shaderName}'` : ""}. ` +
-              "Call gm_shader_crt_retro_builder, create shader asset with gm_shader_create, and analyze varying compatibility with gm_shader_analyze.",
+              "Generate the shader source directly, create shader asset with gm_shader_create, and analyze varying compatibility with gm_shader_analyze.",
           },
         },
       ],
@@ -560,7 +558,7 @@ export function registerWorkflowPrompts(server: McpServer): void {
             type: "text",
             text:
               `Scaffold GGPO-style rollback netcode simulation${maxFrames ? ` with ${maxFrames} rollback frames` : ""}. ` +
-              "Call gm_gml_rollback_netcode_simulator, save rollback script with gm_script_create, and validate with gm_project_validate.",
+              "Write the GML implementation directly, save rollback script with gm_script_create, and validate with gm_project_validate.",
           },
         },
       ],
@@ -582,7 +580,7 @@ export function registerWorkflowPrompts(server: McpServer): void {
             type: "text",
             text:
               `Build fighting game combo input buffer${windowFrames ? ` with ${windowFrames} frames window` : ""}. ` +
-              "Call gm_gml_combo_input_buffer_builder, write buffer controller script with gm_script_create, and inspect with gm_gml_validate_snippet.",
+              "Write the GML implementation directly, write buffer controller script with gm_script_create, and inspect with gm_gml_validate_snippet.",
           },
         },
       ],

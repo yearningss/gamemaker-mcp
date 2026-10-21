@@ -11,7 +11,9 @@ function mcp_register_commands_profiling() {
             application_surface_width: surface_get_width(application_surface),
             application_surface_height: surface_get_height(application_surface),
             game_speed: game_get_speed(gamespeed_fps),
-            current_time: current_time
+            current_time: current_time,
+            texture_pages_used: -1,
+            note_texture: "Use get_texture_page_info for texture details."
         };
     });
 
@@ -128,4 +130,41 @@ function mcp_register_commands_profiling() {
         return _report;
     });
 
+    mcp_route("get_texture_page_info", function(_params) {
+        // GameMaker has limited runtime texture introspection.
+        // We can report on specific sprites or the application surface.
+        var _result = {
+            application_surface_width: surface_get_width(application_surface),
+            application_surface_height: surface_get_height(application_surface)
+        };
+
+        // If a sprite name is provided, get its texture page info
+        if (variable_struct_exists(_params, "sprite_name")) {
+            var _spr = asset_get_index(_params.sprite_name);
+            if (_spr >= 0) {
+                var _tex = sprite_get_uvs(_spr, 0);
+                _result.sprite_name = _params.sprite_name;
+                _result.sprite_uvs = {
+                    left: _tex[0],
+                    top: _tex[1],
+                    right: _tex[2],
+                    bottom: _tex[3],
+                    trimmed_x: _tex[4],
+                    trimmed_y: _tex[5],
+                    source_width: _tex[6],
+                    source_height: _tex[7]
+                };
+                var _tex_id = sprite_get_texture(_spr, 0);
+                _result.texture_id = _tex_id;
+                _result.texture_width = texture_get_width(_tex_id);
+                _result.texture_height = texture_get_height(_tex_id);
+            } else {
+                _result.sprite_error = "Sprite not found: " + _params.sprite_name;
+            }
+        }
+
+        _result.note = "GameMaker does not provide a runtime function to list all texture pages. Query specific sprites for their texture info.";
+
+        return _result;
+    });
 }

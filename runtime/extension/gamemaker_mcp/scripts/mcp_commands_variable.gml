@@ -58,6 +58,27 @@ function mcp_register_commands_variable() {
         };
     });
 
+    mcp_route("set_instance_variable_value", function(_params) {
+        if (!variable_struct_exists(_params, "instance_id") ||
+            !variable_struct_exists(_params, "variable") ||
+            !variable_struct_exists(_params, "value")) {
+            return { __error: "Missing required parameters: instance_id, variable, value", __code: -32602 };
+        }
+
+        var _inst = _params.instance_id;
+        if (!instance_exists(_inst)) {
+            return { __error: "Instance does not exist: " + string(_inst), __code: -32602 };
+        }
+
+        variable_instance_set(_inst, _params.variable, _params.value);
+        return {
+            success: true,
+            instance_id: _inst,
+            variable: _params.variable,
+            new_value: _params.value
+        };
+    });
+
     mcp_route("get_built_in_variables", function(_params) {
         if (!variable_struct_exists(_params, "instance_id")) {
             return { __error: "Missing required parameter: instance_id", __code: -32602 };
@@ -93,6 +114,31 @@ function mcp_register_commands_variable() {
             persistent: _inst.persistent,
             path_index: _inst.path_index,
             alarms: _alarms
+        };
+    });
+
+    mcp_route("evaluate_expression", function(_params) {
+        if (!variable_struct_exists(_params, "expression")) {
+            return { __error: "Missing required parameter: expression", __code: -32602 };
+        }
+
+        // GML does not support dynamic eval at runtime.
+        // We can handle a limited set of simple expressions.
+        var _expr = _params.expression;
+
+        // Handle simple known expressions
+        if (_expr == "instance_count") return { result: instance_count };
+        if (_expr == "fps") return { result: fps };
+        if (_expr == "fps_real") return { result: fps_real };
+        if (_expr == "room") return { result: room_get_name(room) };
+        if (_expr == "room_width") return { result: room_width };
+        if (_expr == "room_height") return { result: room_height };
+        if (_expr == "current_time") return { result: current_time };
+        if (_expr == "delta_time") return { result: delta_time };
+
+        return {
+            note: "Dynamic expression evaluation is not supported in compiled GML. Only predefined expressions are available: instance_count, fps, fps_real, room, room_width, room_height, current_time, delta_time",
+            expression: _expr
         };
     });
 

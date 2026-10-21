@@ -9,6 +9,22 @@ function mcp_register_commands_debug() {
         };
     });
 
+    mcp_route("get_memory_usage", function(_params) {
+        return {
+            note: "Detailed memory profiling is limited in GML runtime",
+            debug_mode: debug_mode,
+            instance_count: instance_count,
+            current_time: current_time
+        };
+    });
+
+    mcp_route("get_draw_calls", function(_params) {
+        return {
+            note: "Draw call count is not directly accessible via GML runtime API. Use the built-in GameMaker profiler for draw call analysis.",
+            debug_mode: debug_mode
+        };
+    });
+
     mcp_route("get_step_time", function(_params) {
         return {
             delta_time: delta_time,
@@ -52,6 +68,42 @@ function mcp_register_commands_debug() {
             entries: _entries,
             total_count: _count,
             returned_count: array_length(_entries)
+        };
+    });
+
+    mcp_route("execute_gml", function(_params) {
+        // Bridge sends "code", accept both "code" and "command" for compatibility
+        var _cmd = "";
+        if (variable_struct_exists(_params, "code")) _cmd = _params.code;
+        else if (variable_struct_exists(_params, "command")) _cmd = _params.command;
+        else {
+            return { __error: "Missing required parameter: code", __code: -32602 };
+        }
+
+        // Handle a limited set of predefined safe commands
+        if (_cmd == "game_restart") {
+            game_restart();
+            return { success: true, command: _cmd };
+        }
+        if (_cmd == "room_restart") {
+            room_restart();
+            return { success: true, command: _cmd };
+        }
+        if (_cmd == "show_debug_message") {
+            var _msg = variable_struct_exists(_params, "message") ? _params.message : "MCP debug";
+            show_debug_message(_msg);
+            return { success: true, command: _cmd, message: _msg };
+        }
+        if (_cmd == "instance_count") {
+            return { success: true, command: _cmd, result: instance_count };
+        }
+        if (_cmd == "fps") {
+            return { success: true, command: _cmd, result: fps };
+        }
+
+        return {
+            note: "Dynamic GML execution is not supported at runtime. Only predefined commands are available: game_restart, room_restart, show_debug_message, instance_count, fps",
+            command: _cmd
         };
     });
 

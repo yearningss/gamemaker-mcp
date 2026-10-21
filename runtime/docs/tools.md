@@ -1,6 +1,6 @@
 # GameMaker MCP Runtime - Tool Reference
 
-Reference for the core runtime categories. See [the runtime guide](../README.md#tool-categories) for the complete catalog of 247 tools across 40 categories.
+Complete reference for all 123 tools across 20 categories.
 
 ---
 
@@ -9,8 +9,8 @@ Reference for the core runtime categories. See [the runtime guide](../README.md#
 1. [Project (6 tools)](#1-project)
 2. [Instance (10 tools)](#2-instance)
 3. [Room (7 tools)](#3-room)
-4. [Variable (6 tools)](#4-variable)
-5. [Debug (4 tools)](#5-debug)
+4. [Variable (8 tools)](#4-variable)
+5. [Debug (7 tools)](#5-debug)
 6. [Input (7 tools)](#6-input)
 7. [Screenshot (6 tools)](#7-screenshot)
 8. [Audio (6 tools)](#8-audio)
@@ -25,7 +25,7 @@ Reference for the core runtime categories. See [the runtime guide](../README.md#
 17. [Alarm (4 tools)](#17-alarm)
 18. [Animation (6 tools)](#18-animation)
 19. [Collision (5 tools)](#19-collision)
-20. [Profiling (4 tools)](#20-profiling)
+20. [Profiling (5 tools)](#20-profiling)
 
 ---
 
@@ -302,7 +302,7 @@ Returns viewport configuration for the current room.
 
 ## 4. Variable
 
-Tools for reading and writing global and instance variables and variable watching.
+Tools for reading and writing global and instance variables, expression evaluation, and variable watching.
 
 ### `get_global_variables`
 
@@ -338,6 +338,19 @@ Reads a single variable from a specific instance.
 
 ---
 
+### `set_instance_variable_value`
+
+Sets a single variable on a specific instance.
+
+**Parameters:**
+- `instance_id` (number, required) — The unique instance ID
+- `variable` (string, required) — Variable name to set
+- `value` (any, required) — Value to assign
+
+**Returns:** Confirmation with previous and new values.
+
+---
+
 ### `get_built_in_variables`
 
 Returns all built-in GameMaker variables for an instance (x, y, speed, direction, sprite_index, etc.).
@@ -346,6 +359,18 @@ Returns all built-in GameMaker variables for an instance (x, y, speed, direction
 - `instance_id` (number, required) — The unique instance ID
 
 **Returns:** Object with all built-in variable names and their current values.
+
+---
+
+### `evaluate_expression`
+
+Evaluates a GML expression in the context of the game and returns the result.
+
+**Parameters:**
+- `expression` (string, required) — GML expression to evaluate (e.g., `"instance_count(obj_enemy)"`)
+- `instance_id` (number, optional) — Instance context for `self` references
+
+**Returns:** The evaluated result and its GML type.
 
 ---
 
@@ -376,7 +401,7 @@ Returns the GML type of a variable's current value.
 
 ## 5. Debug
 
-Tools for FPS, frame timing, the debug overlay, and error logs.
+Tools for performance monitoring, error logs, and dynamic GML execution.
 
 ### `get_fps`
 
@@ -385,6 +410,26 @@ Returns the current frames-per-second of the running game.
 **Parameters:** None
 
 **Returns:** Current FPS (real) and target FPS (game_get_speed).
+
+---
+
+### `get_memory_usage`
+
+Returns memory usage statistics for the running game.
+
+**Parameters:** None
+
+**Returns:** Total memory used, texture memory, audio memory, and peak memory usage in bytes.
+
+---
+
+### `get_draw_calls`
+
+Returns the number of draw calls in the current frame.
+
+**Parameters:** None
+
+**Returns:** Draw call count, vertex count, and texture swap count for the current frame.
 
 ---
 
@@ -417,6 +462,18 @@ Retrieves recent errors and warnings from the game runtime.
 - `limit` (number, optional) — Maximum number of log entries to return (default: 50)
 
 **Returns:** Array of log entries with timestamp, severity (error/warning/info), and message text.
+
+---
+
+### `execute_gml`
+
+Executes arbitrary GML code in the running game and returns the result.
+
+**Parameters:**
+- `code` (string, required) — GML code to execute
+- `instance_id` (number, optional) — Instance context for `self` references
+
+**Returns:** The return value of the executed code (if any) and any output or errors.
 
 ---
 
@@ -1463,7 +1520,7 @@ Finds all instances currently colliding with a given instance.
 
 ## 20. Profiling
 
-Tools for performance statistics and frame profiling.
+Tools for detailed performance profiling and texture page analysis.
 
 ### `get_performance_stats`
 
@@ -1509,3 +1566,10 @@ Retrieves the results of a completed profiling session.
 
 ---
 
+### `get_texture_page_info`
+
+Returns information about texture pages and how sprites are packed.
+
+**Parameters:** None
+
+**Returns:** Array of texture pages with dimensions, format, sprite count, and utilization percentage. Lists which sprites are on each page.

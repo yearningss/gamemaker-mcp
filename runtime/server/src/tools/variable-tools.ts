@@ -49,12 +49,44 @@ export function registerVariableTools(server: McpServer, gm: GameMakerConnection
   );
 
   server.tool(
+    "set_instance_variable_value",
+    "Set a specific variable on an instance",
+    {
+      instance_id: instanceIdSchema,
+      variable: z.string(),
+      value: z.union([z.string(), z.number(), z.boolean()]),
+    },
+    async ({ instance_id, variable, value }) => {
+      try {
+        const result = await gm.sendCommand("set_instance_variable_value", { instance_id, variable, value });
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      } catch (error) {
+        return { content: [{ type: "text", text: formatError(error) }], isError: true };
+      }
+    }
+  );
+
+  server.tool(
     "get_built_in_variables",
     "Get common built-in variable values for an instance (x, y, speed, direction, etc.)",
     { instance_id: instanceIdSchema },
     async ({ instance_id }) => {
       try {
         const result = await gm.sendCommand("get_built_in_variables", { instance_id });
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      } catch (error) {
+        return { content: [{ type: "text", text: formatError(error) }], isError: true };
+      }
+    }
+  );
+
+  server.tool(
+    "evaluate_expression",
+    "Evaluate a GML expression and return the result",
+    { expression: z.string() },
+    async ({ expression }) => {
+      try {
+        const result = await gm.sendCommand("evaluate_expression", { expression });
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       } catch (error) {
         return { content: [{ type: "text", text: formatError(error) }], isError: true };

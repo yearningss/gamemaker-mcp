@@ -11,7 +11,7 @@ The server uses the stable `@modelcontextprotocol/sdk` v1 line over `stdio`. It 
 
 ## Highlights
 
-- 225 MCP tools, 25 reusable workflow prompts, and 6 project resources;
+- 165 MCP tools, 25 reusable workflow prompts, and 6 project resources;
 - zero-config workspace auto-detection (open any GameMaker project folder in your AI client);
 - CLI installer & manager (`gamemaker-mcp install`, `doctor`, `connect`) supporting 20 AI clients & IDEs (Amp, Antigravity, Claude, Cline, Codex, Copilot, Cursor, Factory, Gemini CLI, Goose, Grok, Junie, Kiro, LM Studio, opencode, Qodo, Qwen, VS Code, Warp, Windsurf);
 - tolerant parsing of GameMaker `.yyp`/`.yy` JSON-like files, including trailing commas;
@@ -171,7 +171,7 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 | `GAMEMAKER_RUNTIME` | inferred | Runtime directory paired with Igor |
 | `GAMEMAKER_USER_DIR` | auto-detect | GameMaker user/configuration directory |
 
-## Complete Tool Catalog (225 Tools)
+## Complete Tool Catalog (165 Tools)
 
 ### IDE Integration & Preferences (6 Tools)
 
@@ -332,70 +332,10 @@ If you prefer adding the MCP server to your AI client's configuration file manua
 
 | Tool | Purpose |
 |---|---|
-| `gm_gml_object_collision_event_builder` | Build GML sub-pixel collision resolution event code with velocity reflection & friction |
-| `gm_gml_light_shadow_2d_builder` | Build 2D additive light rendering and shadow caster GML struct code |
-| `gm_gml_particle_emitter_burst_builder` | Build GML particle emitter burst code with region shape and auto-cleanup time source |
-| `gm_gml_ds_grid_to_array2d_converter` | Convert legacy GameMaker ds_grid structures to modern 2D GML Arrays |
-| `gm_gml_shader_uniform_struct_builder` | Build GML struct wrapper for binding and updating Shader Uniforms |
-| `gm_gml_network_packet_buffer_builder` | Build binary GameMaker buffer encoder/decoder struct code for multiplayer network packets |
-| `gm_gml_dialogue_tree_generator` | Generate GML node-based dialogue tree struct system with choice branching |
-| `gm_gml_behavior_tree_builder` | Build AI Behavior Tree system code (Selector, Sequence, Action nodes) |
-| `gm_gml_save_state_rollback_builder` | Build frame rollback save state history struct for local and multiplayer rewind |
-| `gm_gml_screen_shake_camera_builder` | Build GML camera impulse screen shake decay and view pos update code |
-| `gm_gml_localization_csv_builder` | Build GML CSV string table parser and dynamic i18n translation manager struct |
-| `gm_gml_tween_easing_library_generator` | Generate GML Math Easing library (Linear, Quad, Cubic, Bounce) |
-| `gm_gml_render_pipeline_depth_sort_builder` | Build 2.5D depth sorting render pipeline code with Z-buffer toggles |
 | `gm_ide_room_instance_batch_add` | Batch insert multiple object instances into a GameMaker room layer |
 | `gm_gml_performance_memory_audit` | Audit GML scripts for per-frame dynamic allocations and GC pressure |
-| `gm_gml_light_shadow_2d_shader_builder` | Generate HLSL/GLSL ES 2D Light & Dynamic Shadow Shader pair (.vsh + .fsh) |
-| `gm_gml_inventory_drag_drop_ui_builder` | Build Drag-and-Drop Inventory Slot UI system struct GML code |
-| `gm_gml_ds_list_to_array_converter` | Convert legacy ds_list functions to modern GML 1D Array methods |
-| `gm_gml_ds_map_to_struct_converter` | Convert legacy ds_map functions to modern GML Structs |
-| `gm_gml_object_state_machine_events_generate` | Generate Object Event State Machine boilerplate scripts across Create, Step, Clean Up |
-| `gm_gml_surface_blur_bloom_shader_builder` | Generate dual-pass Gaussian Blur & Bloom Shader pair (.vsh + .fsh) |
-| `gm_gml_grid_pathfinding_a_star_builder` | Build custom A* Grid Pathfinding GML struct implementation |
-| `gm_gml_audio_spatial_3d_emitter_builder` | Build 3D Spatial Audio Emitter controller struct code |
-| `gm_gml_save_load_json_encrypted_builder` | Build Encrypted JSON Save/Load system struct GML code with MD5 checksums |
-| `gm_gml_camera_view_follow_bounds_builder` | Build Smooth Camera Follow with Deadzone and Room Clamping code |
-| `gm_gml_ds_priority_to_array_converter` | Convert legacy ds_priority queue to sorted GML Array struct |
-| `gm_gml_event_pubsub_dispatcher_builder` | Build Global Observer Pub/Sub Event Dispatcher GML struct |
-| `gm_gml_flexbox_ui_autolayout_builder` | Build Flexbox UI Layout spacing and alignment calculator GML code |
 | `gm_ide_tileset_autotile_rules_configure` | Configure 47-piece or 16-piece autotiling rule metadata on a GameMaker TileSet |
-| `gm_gml_type_checked_struct_builder` | Build schema-validated GML Struct constructor with type assertions |
-| `gm_gml_ecs_system_builder` | Generate complete Entity-Component-System (ECS) framework in modern GML with entities and systems |
-| `gm_gml_spatial_hash_grid_builder` | Build 2D Spatial Hashing Grid collision & broadphase query optimizer for 10,000+ entities |
-| `gm_gml_quadtree_builder` | Build 2D Quadtree spatial partitioning system for fast dynamic range queries and frustum culling |
-| `gm_gml_state_machine_hierarchical_builder` | Build Hierarchical Finite State Machine with nested sub-states, enter/exit cascades, and state stack |
-| `gm_shader_crt_retro_builder` | Generate GLSL ES Retro CRT filter shaders with curvature, scanlines, and chromatic aberration |
-| `gm_shader_water_distortion_builder` | Generate GLSL ES Screen-space water reflection, wave distortion, and caustics normal-map shader pair |
-| `gm_shader_dissolve_burn_builder` | Generate GLSL ES Texture dissolve & burning ember edge shader pair with threshold controls |
-| `gm_shader_palette_swap_builder` | Generate GLSL ES Dynamic 2D palette swap shader supporting real-time indexed texture lookup |
-| `gm_shader_outline_glow_builder` | Generate GLSL ES Pixel-perfect outer outline and inner glow shader for 2D sprites |
-| `gm_shader_fog_of_war_builder` | Generate GLSL ES Fog of war discovery and soft radial mask shader pair |
-| `gm_shader_shockwave_distortion_builder` | Generate GLSL ES Expanding radial shockwave displacement shader pair |
-| `gm_shader_glitch_vhs_builder` | Generate GLSL ES VHS tracking lines, RGB chromatic split, and analog glitch shader pair |
-| `gm_shader_wind_grass_sway_builder` | Generate GLSL ES Vegetation vertex sway wind animation shader pair |
-| `gm_shader_color_grading_lut_builder` | Generate GLSL ES 3D LUT color grading texture sampler shader pair |
-| `gm_gml_verlet_rope_cloth_builder` | Build 2D Verlet Integration physics engine for ropes, chains, ragdolls, and cloth simulation |
-| `gm_gml_pid_controller_builder` | Build PID controller for smooth procedural physics, steering, and camera dampening |
-| `gm_gml_bezier_spline_builder` | Build Cubic & Quadratic Bezier curve spline generator with arc-length parameterization |
-| `gm_gml_procedural_generation_dungeon_builder` | Build procedural dungeon generator with BSP rooms and connecting corridors |
-| `gm_gml_wave_function_collapse_builder` | Build 2D Wave Function Collapse procedural map tile generator |
-| `gm_gml_audio_dynamic_music_manager` | Build dynamic music crossfader with vertical layering (stems) based on game intensity |
-| `gm_gml_audio_sound_envelope_builder` | Build ADSR volume envelope generator for procedural sounds and audio synthesizer effects |
-| `gm_gml_combo_input_buffer_builder` | Build fighting game style directional + button input buffer with fuzzy timing windows |
-| `gm_gml_quest_journal_builder` | Build branching Quest/Mission Journal system with objectives, stages, and completion tracking |
-| `gm_gml_skill_tree_builder` | Build node-based RPG Skill Tree progression calculator with prerequisites, point costs, and modifiers |
-| `gm_gml_floating_text_manager` | Build high-performance pooled floating combat damage numbers & combat text renderer |
-| `gm_gml_virtual_joystick_touch_builder` | Build mobile/touch virtual thumbstick & action buttons controller struct |
-| `gm_gml_cutscene_sequencer_builder` | Build coroutine-like step-by-step cutscene action sequencer (camera moves, dialogues, delays) |
-| `gm_gml_achievement_system_builder` | Build local and Steam-compatible achievement tracker with progress notifications |
-| `gm_gml_dialogue_choice_graph_builder` | Build branching dialogue graph with conditional choices, portraits, and speaker labels |
-| `gm_gml_rollback_netcode_simulator` | Build GGPO-style client-side prediction, input ring buffer, and state resimulation loop |
-| `gm_gml_save_compression_zlib_builder` | Build binary buffer zlib compression and decompression logic for save files |
-| `gm_gml_cloud_save_sync_builder` | Build cloud save timestamp conflict resolution and synchronization logic |
 | `gm_project_git_diff_summary` | Scan project changes relative to git, mapping modified files to GameMaker asset names |
-| `gm_gml_benchmark_macro_injector` | Inject high-resolution timer profiling macros (get_timer()) around target GML functions |
 | `gm_room_bulk_tile_filler` | Fill a room tilemap layer with a repeating grid of tiles procedurally |
 
 ## Resources and Prompts
@@ -481,7 +421,7 @@ Project path checks, write permissions, input validation and hash checks still r
 
 ## Runtime tools
 
-The runtime server provides 247 tools across 40 categories for inspecting and
+The runtime server provides 254 tools across 40 categories for inspecting and
 controlling a running GameMaker game. It starts with two category discovery tools;
 use `list_tool_categories` and `load_category` to enable what you need.
 

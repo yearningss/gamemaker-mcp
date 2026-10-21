@@ -50,6 +50,14 @@ function mcp_register_commands_gc_memory() {
         };
     });
 
+    mcp_route("get_ds_memory_estimate", function(_params) {
+        return {
+            note: "DS memory estimation not directly available in GML",
+            instance_count: instance_count,
+            global_struct_count: variable_struct_names_count(global)
+        };
+    });
+
     mcp_route("get_memory_snapshot", function(_params) {
         var _w = surface_get_width(application_surface);
         var _h = surface_get_height(application_surface);
