@@ -15,6 +15,7 @@ test("stdio MCP server lists and calls GameMaker tools", async () => {
   const env = Object.fromEntries(
     Object.entries({
       ...process.env,
+      GM_MCP_TOOL_MODE: "full",
       GAMEMAKER_PROJECT: fixture.projectFile,
       GAMEMAKER_MCP_MODE: "read-only",
       GAMEMAKER_MCP_ALLOW_BUILD: "0",

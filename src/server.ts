@@ -1,4 +1,5 @@
 import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { installToolDiscovery } from "./tool-discovery.js";
 import { z } from "zod";
 
 import { registerAnalysisTools } from "./analysis-tools.js";
@@ -62,6 +63,8 @@ export function createServer(config: ServerConfig): McpServer {
         "All file paths are relative to the configured GameMaker project and cannot escape it.",
     },
   );
+
+  const finishDiscovery = installToolDiscovery(server);
 
   server.registerTool(
     "gm_project_info",
@@ -507,5 +510,6 @@ export function createServer(config: ServerConfig): McpServer {
     }),
   );
 
+  finishDiscovery();
   return server;
 }

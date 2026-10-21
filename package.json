@@ -11,14 +11,17 @@
     "bin",
     "scripts",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "runtime"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && tsc -p runtime/server/tsconfig.json",
     "check": "tsc -p tsconfig.json --noEmit",
     "start": "node dist/src/index.js",
     "smoke": "npm run build && node scripts/smoke.mjs",
-    "test": "npm run build && cd dist && node --test"
+    "test": "npm run build && cd dist && node --test",
+    "build:runtime": "tsc -p runtime/server/tsconfig.json",
+    "start:runtime": "node runtime/server/build/index.js"
   },
   "engines": {
     "node": ">=20"

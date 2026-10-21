@@ -470,21 +470,29 @@ npm run smoke -- "C:\path\to\Game.yyp"
 
 The server intentionally does not expose arbitrary shell commands, arbitrary YY/YPP overwrite, bulk asset deletion, or GUI automation. Binary sprite/audio import remains outside the current safe text-focused scope.
 
-## Special Thanks (Not Really)
+## Compact tool discovery (default)
 
-A special shoutout to **Jon Peterson ([PixelatedPope](https://www.youtube.com/@PixelatedPope))** for his hostile comment regarding this tool and AI assistance in GameMaker development:
+The project server initially advertises only `gm_tools_search` and `gm_tools_enable`.
+Search using words from a tool name or description, then enable the returned names.
+Disable finished tools with `enabled: false`. Pagination uses `offset` and `limit`.
+Clients must refresh their tool list after MCP tool-list change notifications.
+Set `GM_MCP_TOOL_MODE=full` for clients that require a static catalog or for legacy integrations.
+Project path checks, write permissions, input validation and hash checks still run in the original handlers.
 
-> "Sorry, he meant 'Real' Game Devs. Not lazy fucks who rely on stolen works"
+## Runtime tools
 
-![PixelatedPope Comment](images/pope_comment.jpg)
+The runtime server provides 254 tools across 40 categories for inspecting and
+controlling a running GameMaker game. It starts with two category discovery tools;
+use `list_tool_categories` and `load_category` to enable what you need.
 
-### A Striking Irony in the GameMaker Community
+Run `npm ci` and `npm run build` in the repository root. Configure a second MCP
+server using `node /absolute/path/gamemaker-mcp/runtime/server/build/index.js`.
+For terminal use, run `npm run start:runtime`.
 
-It is deeply disappointing to see this kind of reaction from a prominent community educator whose content has helped many beginners get started with coding.
+Install the GML extension using [the installation guide](runtime/INSTALL.md).
+The default connection is `127.0.0.1:6705`; configure it with
+`GAMEMAKER_MCP_HOST` and `GAMEMAKER_MCP_PORT`.
 
-*   **The Mentorship Paradox:** The core mission of an educator is to lower the barrier to entry and make development accessible. AI-assisted tooling (like this MCP server) does exactly that—democratizing learning by offering a 24/7 interactive helper that explains GML concepts and catches errors.
-*   **The Cycle of Gatekeeping:** Every major technology leap in game development has faced this defensive reaction. High-level language users were once called "lazy" by assembly developers; GameMaker users were ridiculed by custom-engine purists. Today, manual coders repeat history by gatekeeping AI tools.
-*   **Evolution, Not Theft:** Claiming that AI tools rely on "stolen works" overlooks how learning works. Just as humans learn by observing patterns in code, libraries, and tutorials, LLMs learn syntax structure.
-
-While some choose to throw insults and protect legacy gatekeeping, we will continue building modern, open-source, project-aware developer tooling to make GameMaker Studio and the new GMRT runtime more accessible, efficient, and powerful for everyone. 🚀
-
+The runtime server controls the game independently of the project server's
+read-only mode and filesystem sandbox. Use it in development builds.
+See the [runtime tool reference](runtime/docs/tools.md).

@@ -243,6 +243,7 @@ test("stdio MCP exposes the complete extended GameMaker toolset", async () => {
   const env = Object.fromEntries(
     Object.entries({
       ...process.env,
+      GM_MCP_TOOL_MODE: "full",
       GAMEMAKER_PROJECT: fixture.projectFile,
       GAMEMAKER_MCP_MODE: "read-only",
       GAMEMAKER_MCP_ALLOW_BUILD: "0",

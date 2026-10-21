@@ -2,3 +2,5 @@ node_modules/
 dist/
 .gamemaker-mcp/
 *.log
+
+runtime/server/build/
