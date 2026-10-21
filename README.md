@@ -495,4 +495,4 @@ The default connection is `127.0.0.1:6705`; configure it with
 
 The runtime server controls the game independently of the project server's
 read-only mode and filesystem sandbox. Use it in development builds.
-See the [runtime tool reference](runtime/docs/tools.md).
+See the [runtime guide](runtime/README.md) and [tool reference](runtime/docs/tools.md).
