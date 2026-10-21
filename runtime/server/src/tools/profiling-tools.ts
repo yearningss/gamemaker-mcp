@@ -42,12 +42,4 @@ export function registerProfilingTools(server: McpServer, gm: GameMakerConnectio
     }
   });
 
-  server.tool("get_texture_page_info", "Get texture page usage information", {}, async () => {
-    try {
-      const result = await gm.sendCommand("get_texture_page_info", {});
-      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
-    } catch (error) {
-      return { content: [{ type: "text", text: formatError(error) }], isError: true };
-    }
-  });
 }

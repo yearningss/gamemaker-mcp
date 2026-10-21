@@ -481,7 +481,7 @@ Project path checks, write permissions, input validation and hash checks still r
 
 ## Runtime tools
 
-The runtime server provides 254 tools across 40 categories for inspecting and
+The runtime server provides 247 tools across 40 categories for inspecting and
 controlling a running GameMaker game. It starts with two category discovery tools;
 use `list_tool_categories` and `load_category` to enable what you need.
 

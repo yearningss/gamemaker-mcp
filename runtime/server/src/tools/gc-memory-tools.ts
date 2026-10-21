@@ -45,15 +45,6 @@ export function registerGcMemoryTools(server: McpServer, gm: GameMakerConnection
     }
   });
 
-  server.tool("get_ds_memory_estimate", "Estimate memory used by data structure allocations", {}, async () => {
-    try {
-      const result = await gm.sendCommand("get_ds_memory_estimate", {});
-      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
-    } catch (error) {
-      return { content: [{ type: "text", text: formatError(error) }], isError: true };
-    }
-  });
-
   server.tool("get_memory_snapshot", "Get a comprehensive memory usage snapshot", {}, async () => {
     try {
       const result = await gm.sendCommand("get_memory_snapshot", {});
